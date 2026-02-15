@@ -4,7 +4,7 @@ WORKDIR /app
 
 # Python runtime for local YOLO inference
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends python3 python3-pip python3-venv && \
+    apt-get install -y --no-install-recommends python3 python3-pip python3-venv libgl1 libglib2.0-0 && \
     rm -rf /var/lib/apt/lists/*
 
 # Use isolated venv to avoid Debian PEP 668 pip restrictions
@@ -36,3 +36,4 @@ ENV NODE_ENV=production
 EXPOSE 10000
 
 CMD ["node", "server/server.js"]
+

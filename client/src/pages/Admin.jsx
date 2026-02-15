@@ -26,8 +26,15 @@ const Admin = () => {
       setLoading(true);
       const query = status === "All Orders" ? "" : `?status=${encodeURIComponent(status)}`;
       const res = await axios.get(`/admin/orders${query}`, { authMode: "admin" });
-      setOrders(res.data);
-      setMessage("");
+      const payload = res.data;
+      const parsedOrders = Array.isArray(payload)
+        ? payload
+        : Array.isArray(payload?.orders)
+          ? payload.orders
+          : [];
+
+      setOrders(parsedOrders);
+      setMessage(parsedOrders.length || status !== "All Orders" ? "" : "No orders found yet. Place a booking from user account first.");
     } catch (error) {
       setMessage(error?.response?.data?.message || "Unable to load orders");
     } finally {
@@ -199,3 +206,4 @@ const StatBadge = ({ label, value }) => (
 );
 
 export default Admin;
+
