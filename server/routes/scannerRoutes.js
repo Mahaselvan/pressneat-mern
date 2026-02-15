@@ -79,7 +79,7 @@ const runDetectionWithBin = (pythonBin, imagePath) =>
 const runDetection = async (imagePath) => {
   const bins = configuredPythonBin
     ? [configuredPythonBin]
-    : ["python", "python3"];
+    : ["python3", "python"];
 
   let lastError = null;
   for (const bin of bins) {
@@ -147,3 +147,4 @@ router.post("/", upload.single("image"), async (req, res) => {
 });
 
 export default router;
+
