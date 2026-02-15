@@ -107,6 +107,12 @@ const Home = () => {
                     {message}
                   </Text>
                 ) : null}
+                <Box mt={3} p={3} borderRadius="md" bg="blue.50" border="1px solid #bfdbfe">
+                  <Text fontSize="xs" color="blue.900">
+                    Booking tips: enter a valid 6-digit pincode, keep full pickup address ready,
+                    then choose cloth counts and confirm payment on the booking page.
+                  </Text>
+                </Box>
               </Box>
 
               <SimpleGrid columns={{ base: 1, sm: 3 }} spacing={6} pt={2}>

@@ -141,15 +141,24 @@ const Book = () => {
         name: "PressNeat",
         description: "Laundry payment",
         handler: async function (response) {
-          await axios.post("/payment/verify", {
-            ...response,
-            orderId: currentOrderId,
-          });
-          setMessage("Payment successful. Your order is now confirmed.");
+          try {
+            await axios.post("/payment/verify", {
+              ...response,
+              orderId: currentOrderId,
+            });
+            setMessage("Payment successful. Your order is now confirmed.");
+          } catch (verifyError) {
+            setMessage(verifyError?.response?.data?.message || "Payment verification failed.");
+          }
         },
         prefill: { name, contact: phone },
         theme: { color: "#F59E0B" },
       };
+
+      if (!window.Razorpay) {
+        setMessage("Payment gateway not loaded. Refresh and try again.");
+        return;
+      }
 
       const rzp = new window.Razorpay(options);
       rzp.open();
@@ -168,6 +177,20 @@ const Book = () => {
         <Text color="gray.600" mb={6}>
           Schedule a pickup and get your clothes ironed professionally
         </Text>
+        <Box mb={4} p={4} borderRadius="lg" bg="blue.50" border="1px solid #bfdbfe">
+          <Text fontWeight="700" color="blue.800" mb={1}>
+            Before booking
+          </Text>
+          <Text fontSize="sm" color="blue.900">
+            1. Enter full address and 6-digit pincode.
+          </Text>
+          <Text fontSize="sm" color="blue.900">
+            2. Select at least one cloth item.
+          </Text>
+          <Text fontSize="sm" color="blue.900">
+            3. Ensure pincode shows service available, then pay to confirm order.
+          </Text>
+        </Box>
 
         <Box p={6} bg="white" borderRadius="2xl" border="1px solid #e5e7eb" mb={6}>
           <Heading size="md" mb={4}>

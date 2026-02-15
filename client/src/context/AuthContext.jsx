@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import axios from "../api/axios";
 
 const AuthContext = createContext();
@@ -13,45 +13,45 @@ export const AuthProvider = ({ children }) => {
     return storedAdmin ? JSON.parse(storedAdmin) : null;
   });
 
-  const register = async (data) => {
+  const register = useCallback(async (data) => {
     const res = await axios.post("/auth/register", data);
     localStorage.setItem("token", res.data.token);
     localStorage.setItem("user", JSON.stringify(res.data.user));
     setUser(res.data.user);
     return res.data.user;
-  };
+  }, []);
 
-  const login = async (data) => {
+  const login = useCallback(async (data) => {
     const res = await axios.post("/auth/login", data);
     localStorage.setItem("token", res.data.token);
     localStorage.setItem("user", JSON.stringify(res.data.user));
     setUser(res.data.user);
     return res.data.user;
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     setUser(null);
-  };
+  }, []);
 
-  const adminLogin = async (data) => {
+  const adminLogin = useCallback(async (data) => {
     const res = await axios.post("/auth/admin/login", data);
     localStorage.setItem("adminToken", res.data.token);
     localStorage.setItem("adminUser", JSON.stringify(res.data.user));
     setAdmin(res.data.user);
     return res.data.user;
-  };
+  }, []);
 
-  const adminRegister = async (data) => {
+  const adminRegister = useCallback(async (data) => {
     const res = await axios.post("/auth/admin/register", data);
     localStorage.setItem("adminToken", res.data.token);
     localStorage.setItem("adminUser", JSON.stringify(res.data.user));
     setAdmin(res.data.user);
     return res.data.user;
-  };
+  }, []);
 
-  const refreshUser = async () => {
+  const refreshUser = useCallback(async () => {
     const { data } = await axios.get("/auth/me");
     if (data.role === "admin") {
       localStorage.setItem("adminUser", JSON.stringify(data));
@@ -61,9 +61,9 @@ export const AuthProvider = ({ children }) => {
       setUser(data);
     }
     return data;
-  };
+  }, []);
 
-  const updateProfile = async (payload) => {
+  const updateProfile = useCallback(async (payload) => {
     const { data } = await axios.put("/auth/me", payload);
     if (data.role === "admin") {
       localStorage.setItem("adminUser", JSON.stringify(data));
@@ -73,29 +73,43 @@ export const AuthProvider = ({ children }) => {
       setUser(data);
     }
     return data;
-  };
+  }, []);
 
-  const adminLogout = () => {
+  const adminLogout = useCallback(() => {
     localStorage.removeItem("adminToken");
     localStorage.removeItem("adminUser");
     setAdmin(null);
-  };
+  }, []);
+
+  const value = useMemo(
+    () => ({
+      user,
+      register,
+      login,
+      logout,
+      admin,
+      adminLogin,
+      adminRegister,
+      adminLogout,
+      refreshUser,
+      updateProfile,
+    }),
+    [
+      user,
+      register,
+      login,
+      logout,
+      admin,
+      adminLogin,
+      adminRegister,
+      adminLogout,
+      refreshUser,
+      updateProfile,
+    ]
+  );
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        register,
-        login,
-        logout,
-        admin,
-        adminLogin,
-        adminRegister,
-        adminLogout,
-        refreshUser,
-        updateProfile,
-      }}
-    >
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

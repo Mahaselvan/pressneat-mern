@@ -11,36 +11,51 @@ import {
   Text,
   VStack,
 } from "@chakra-ui/react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "../api/axios";
 import { useAuth } from "../context/AuthContext";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const { admin, adminLogout } = useAuth();
+  const { admin, adminLogout, refreshUser, updateProfile } = useAuth();
   const [analytics, setAnalytics] = useState(null);
   const [message, setMessage] = useState("Loading admin dashboard...");
   const [loading, setLoading] = useState(true);
   const [newAdmin, setNewAdmin] = useState({ name: "", phone: "", password: "" });
   const [createLoading, setCreateLoading] = useState(false);
+  const [adminForm, setAdminForm] = useState({
+    name: "",
+    email: "",
+    address: "",
+    pincode: "",
+    language: "English",
+  });
+  const [savingProfile, setSavingProfile] = useState(false);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     try {
       setLoading(true);
-      const { data } = await axios.get("/admin/analytics");
-      setAnalytics(data);
+      const [analyticsRes, profile] = await Promise.all([axios.get("/admin/analytics"), refreshUser()]);
+      setAnalytics(analyticsRes.data);
+      setAdminForm({
+        name: profile.name || "",
+        email: profile.email || "",
+        address: profile.address || "",
+        pincode: profile.pincode || "",
+        language: profile.language || "English",
+      });
       setMessage("");
     } catch {
       setMessage("Unable to load admin dashboard");
     } finally {
       setLoading(false);
     }
-  };
+  }, [refreshUser]);
 
   useEffect(() => {
     load();
-  }, []);
+  }, [load]);
 
   const createAdmin = async () => {
     if (!newAdmin.name || !newAdmin.phone || !newAdmin.password) {
@@ -57,6 +72,18 @@ const AdminDashboard = () => {
       setMessage(error?.response?.data?.message || "Failed to create admin");
     } finally {
       setCreateLoading(false);
+    }
+  };
+
+  const saveAdminProfile = async () => {
+    try {
+      setSavingProfile(true);
+      await updateProfile(adminForm);
+      setMessage("Admin profile updated.");
+    } catch (error) {
+      setMessage(error?.response?.data?.message || "Failed to update admin profile");
+    } finally {
+      setSavingProfile(false);
     }
   };
 
@@ -93,10 +120,7 @@ const AdminDashboard = () => {
                   {admin?.name || "Admin User"}
                 </Heading>
                 <Text color="gray.500" fontSize="sm">
-                  <span role="img" aria-label="location">
-                    📍
-                  </span>{" "}
-                  PressNeat Control Center
+                  📍 PressNeat Control Center
                 </Text>
                 <Box
                   display="inline-flex"
@@ -146,6 +170,37 @@ const AdminDashboard = () => {
             </Flex>
           </Box>
 
+          <Box bg="white" border="1px solid #d4d4d8" borderRadius="xl" p={4}>
+            <Text fontWeight="700" mb={3}>
+              Admin Profile
+            </Text>
+            <VStack spacing={3} align="stretch">
+              <Input
+                placeholder="Name"
+                value={adminForm.name}
+                onChange={(e) => setAdminForm((prev) => ({ ...prev, name: e.target.value }))}
+              />
+              <Input
+                placeholder="Email"
+                value={adminForm.email}
+                onChange={(e) => setAdminForm((prev) => ({ ...prev, email: e.target.value }))}
+              />
+              <Input
+                placeholder="Address"
+                value={adminForm.address}
+                onChange={(e) => setAdminForm((prev) => ({ ...prev, address: e.target.value }))}
+              />
+              <Input
+                placeholder="Pincode"
+                value={adminForm.pincode}
+                onChange={(e) => setAdminForm((prev) => ({ ...prev, pincode: e.target.value }))}
+              />
+              <Button colorScheme="blue" onClick={saveAdminProfile} isLoading={savingProfile}>
+                Save Admin Profile
+              </Button>
+            </VStack>
+          </Box>
+
           <Box bg="#eff6ff" border="1px solid #bfdbfe" borderRadius="xl" p={5}>
             <Text color="#1d4ed8" fontWeight="700" mb={3}>
               Admin Actions
@@ -171,6 +226,11 @@ const AdminDashboard = () => {
               Order Status Breakdown
             </Text>
             <VStack align="stretch" spacing={2}>
+              {(analytics?.statusBreakdown || []).length === 0 ? (
+                <Text color="gray.500" fontSize="sm">
+                  No order data yet.
+                </Text>
+              ) : null}
               {(analytics?.statusBreakdown || []).map((entry) => (
                 <HStack key={entry._id} justify="space-between">
                   <Text color="gray.700">{entry._id}</Text>
@@ -185,8 +245,19 @@ const AdminDashboard = () => {
               Recent Orders
             </Text>
             <VStack align="stretch" spacing={2}>
+              {(analytics?.recentOrders || []).length === 0 ? (
+                <Text color="gray.500" fontSize="sm">
+                  No orders booked yet.
+                </Text>
+              ) : null}
               {(analytics?.recentOrders || []).map((order) => (
-                <HStack key={order._id} justify="space-between" align="start" borderBottom="1px solid #f1f5f9" pb={2}>
+                <HStack
+                  key={order._id}
+                  justify="space-between"
+                  align="start"
+                  borderBottom="1px solid #f1f5f9"
+                  pb={2}
+                >
                   <Box>
                     <Text fontWeight="600">{order.customerName}</Text>
                     <Text fontSize="xs" color="gray.500">
@@ -243,6 +314,12 @@ const AdminDashboard = () => {
               navigate("/admin/login");
             }}
           />
+
+          {message ? (
+            <Text fontSize="sm" color="gray.700">
+              {message}
+            </Text>
+          ) : null}
         </VStack>
       </Container>
     </Box>

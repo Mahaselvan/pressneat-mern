@@ -114,6 +114,11 @@ const Admin = () => {
         ) : null}
 
         <VStack spacing={4} align="stretch">
+          {orders.length === 0 ? (
+            <Box p={4} bg="white" borderRadius="xl" border="1px solid #fed7aa">
+              <Text color="gray.600">No orders found yet. Place a booking from user account first.</Text>
+            </Box>
+          ) : null}
           {orders.map((order) => (
             <Box
               key={order._id}
