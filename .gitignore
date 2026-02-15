@@ -16,6 +16,10 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# Local AI runtime artifacts
+server/uploads/
+server/ai/__pycache__/
+
 # OS / editor
 .DS_Store
 .vscode/

@@ -25,12 +25,14 @@ const Scanner = () => {
       setMessage("Scan completed.");
     } catch (error) {
       const code = error?.response?.data?.code;
-      if (code === "OPENAI_KEY_MISSING") {
-        setMessage("Scanner is not enabled on server. Set OPENAI_API_KEY in backend environment.");
-      } else if (code === "AI_QUOTA_EXCEEDED") {
-        setMessage("AI quota exceeded. Recharge your OpenAI account and try scanning again.");
-      } else if (code === "OPENAI_KEY_INVALID") {
-        setMessage("OpenAI API key is invalid. Update backend OPENAI_API_KEY.");
+      if (code === "PYTHON_NOT_FOUND") {
+        setMessage("Python not found on server. Install Python or set PYTHON_BIN.");
+      } else if (code === "PYTHON_DEPENDENCY_MISSING") {
+        setMessage("Install AI dependency on server: pip install ultralytics");
+      } else if (code === "DETECT_SCRIPT_MISSING") {
+        setMessage("AI script missing at server/ai/detect.py");
+      } else if (code === "LOCAL_AI_SCAN_FAILED") {
+        setMessage("Local AI scan failed. Check server logs for Python/YOLO errors.");
       } else {
         setMessage(error?.response?.data?.error || "Scanner failed. Try again.");
       }
