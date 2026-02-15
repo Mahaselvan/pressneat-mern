@@ -1,10 +1,11 @@
 import { Box, Heading, Text, Button, Input } from "@chakra-ui/react";
 import Navbar from "../components/Navbar";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "../api/axios";
 import { useState } from "react";
 
 const Home = ({ user }) => {
+  const navigate = useNavigate();
   const [pincode, setPincode] = useState("");
   const [available, setAvailable] = useState(null);
 
@@ -26,11 +27,17 @@ const Home = ({ user }) => {
           </Button>
         </Link>
         <Button
-  colorScheme="purple"
-  onClick={() => axios.post(`/subscription/${user._id}`)}
->
-  Upgrade to Premium ₹499/month
-</Button>
+          colorScheme="purple"
+          onClick={async () => {
+            if (!user?._id) {
+              navigate("/login");
+              return;
+            }
+            await axios.post(`/subscription/${user._id}`);
+          }}
+        >
+          Upgrade to Premium ₹499/month
+        </Button>
  <Input
   placeholder="Enter Pincode"
   mt={4}

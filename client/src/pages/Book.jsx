@@ -1,13 +1,4 @@
-import {
-  Box,
-  Input,
-  Button,
-  Checkbox,
-  Heading,
-  VStack,
-  Text,
-  Badge
-} from "@chakra-ui/react";
+import { Box, Input, Button, Checkbox, Heading, VStack, Badge } from "@chakra-ui/react";
 import { useState } from "react";
 import axios from "../api/axios";
 
@@ -17,52 +8,56 @@ const Book = () => {
   const [address, setAddress] = useState("");
   const [items, setItems] = useState("");
   const [eco, setEco] = useState(false);
+  const [orderId, setOrderId] = useState("");
 
   const handleSubmit = async () => {
-    await axios.post("/orders", {
+    const res = await axios.post("/orders", {
       customerName: name,
       phone,
       address,
       items: items.split(","),
-      ecoSteam: eco
+      ecoSteam: eco,
     });
 
-    alert("Order Placed Successfully!");
+    setOrderId(res.data._id);
+    alert("Order placed successfully. Continue with payment.");
   };
-const handlePayment = async () => {
-  // Step 1: Create Razorpay order
-  const { data } = await axios.post("/payment/create-order", {
-    amount: 200
-  });
 
-  const options = {
-    key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-    amount: data.amount,
-    currency: "INR",
-    order_id: data.id,
-
-    handler: async function (response) {
-      await axios.post("/payment/verify", {
-        ...response,
-        orderId: data.id
-      });
-
-      alert("Payment Successful!");
-    },
-
-    prefill: {
-      name: name,
-      contact: phone
-    },
-
-    theme: {
-      color: "#F97316"
+  const handlePayment = async () => {
+    if (!orderId) {
+      alert("Please place the order first.");
+      return;
     }
-  };
 
-  const rzp = new window.Razorpay(options);
-  rzp.open();
-};
+    const { data } = await axios.post("/payment/create-order", {
+      amount: 200,
+      orderId,
+    });
+
+    const options = {
+      key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+      amount: data.amount,
+      currency: "INR",
+      order_id: data.id,
+      handler: async function (response) {
+        await axios.post("/payment/verify", {
+          ...response,
+          orderId,
+        });
+        alert("Payment successful!");
+      },
+      prefill: {
+        name,
+        contact: phone,
+      },
+      theme: {
+        color: "#F97316",
+      },
+    };
+
+    const rzp = new window.Razorpay(options);
+    rzp.open();
+  };
 
   return (
     <Box maxW="500px" mx="auto" mt="50px" p={6} shadow="md" borderRadius="lg">
@@ -74,7 +69,6 @@ const handlePayment = async () => {
         <Input placeholder="Your Name" onChange={(e) => setName(e.target.value)} />
         <Input placeholder="Phone Number" onChange={(e) => setPhone(e.target.value)} />
         <Input placeholder="Pickup Address" onChange={(e) => setAddress(e.target.value)} />
-
         <Input
           placeholder="Items (shirt,saree,pant)"
           onChange={(e) => setItems(e.target.value)}
@@ -92,9 +86,7 @@ const handlePayment = async () => {
           Proceed to Payment
         </Button>
 
-        <Badge colorScheme="green">
-          ₹12 per piece • 60 min service
-        </Badge>
+        <Badge colorScheme="green">₹12 per piece • 60 min service</Badge>
       </VStack>
     </Box>
   );

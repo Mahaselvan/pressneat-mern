@@ -4,7 +4,10 @@ import axios from "../api/axios";
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    const storedUser = localStorage.getItem("user");
+    return storedUser ? JSON.parse(storedUser) : null;
+  });
 
   const register = async (data) => {
     const res = await axios.post("/auth/register", data);
@@ -14,11 +17,13 @@ export const AuthProvider = ({ children }) => {
   const login = async (data) => {
     const res = await axios.post("/auth/login", data);
     localStorage.setItem("token", res.data.token);
+    localStorage.setItem("user", JSON.stringify(res.data.user));
     setUser(res.data.user);
   };
 
   const logout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("user");
     setUser(null);
   };
 

@@ -1,11 +1,4 @@
-import {
-  Box,
-  Heading,
-  SimpleGrid,
-  Stat,
-  StatLabel,
-  StatNumber
-} from "@chakra-ui/react";
+import { Box, Heading, SimpleGrid, Text } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import axios from "../api/axios";
 
@@ -23,28 +16,26 @@ const AdminDashboard = () => {
   return (
     <Box p={6}>
       <Heading mb={6}>Admin Analytics</Heading>
-
       <SimpleGrid columns={[1, 2, 3]} spacing={6}>
-        <StatBox label="Total Orders" value={data.totalOrders} />
-        <StatBox label="Total Revenue" value={`₹${data.totalRevenue}`} />
-        <StatBox label="Today's Orders" value={data.todaysOrders} />
-        <StatBox label="Active Orders" value={data.activeOrders} />
-        <StatBox label="Premium Users" value={data.premiumUsers} />
+        <MetricCard label="Total Orders" value={data.totalOrders} />
+        <MetricCard label="Total Revenue" value={`₹${data.totalRevenue}`} />
+        <MetricCard label="Today's Orders" value={data.todaysOrders} />
+        <MetricCard label="Active Orders" value={data.activeOrders} />
+        <MetricCard label="Premium Users" value={data.premiumUsers} />
       </SimpleGrid>
     </Box>
   );
 };
 
-const StatBox = ({ label, value }) => (
-  <Stat
-    p={5}
-    shadow="md"
-    borderRadius="lg"
-    bg="white"
-  >
-    <StatLabel>{label}</StatLabel>
-    <StatNumber>{value}</StatNumber>
-  </Stat>
+const MetricCard = ({ label, value }) => (
+  <Box p={5} shadow="md" borderRadius="lg" bg="white">
+    <Text color="gray.500" fontSize="sm">
+      {label}
+    </Text>
+    <Text fontSize="2xl" fontWeight="bold">
+      {value}
+    </Text>
+  </Box>
 );
 
 export default AdminDashboard;

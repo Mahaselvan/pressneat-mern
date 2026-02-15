@@ -5,48 +5,57 @@ import jwt from "jsonwebtoken";
 
 const router = express.Router();
 
-// Register
 router.post("/register", async (req, res) => {
   const { name, phone, password } = req.body;
 
-  const hashedPassword = await bcrypt.hash(password, 10);
+  const existingUser = await User.findOne({ phone });
+  if (existingUser) {
+    return res.status(400).json({ message: "Phone already registered" });
+  }
 
+  const hashedPassword = await bcrypt.hash(password, 10);
   const user = await User.create({
     name,
     phone,
-    password: hashedPassword
+    password: hashedPassword,
   });
 
-  res.json(user);
+  res.json({
+    _id: user._id,
+    name: user.name,
+    phone: user.phone,
+    role: user.role,
+  });
 });
 
-// Login
 router.post("/login", async (req, res) => {
   const { phone, password } = req.body;
-
   const user = await User.findOne({ phone });
 
-  if (!user) return res.status(400).json({ message: "User not found" });
+  if (!user) {
+    return res.status(400).json({ message: "User not found" });
+  }
 
   const isMatch = await bcrypt.compare(password, user.password);
-
-  if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
+  if (!isMatch) {
+    return res.status(400).json({ message: "Invalid credentials" });
+  }
 
   const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-    expiresIn: "30d"
+    expiresIn: "30d",
   });
 
-  res.json({ token, user });
-});
-// Update rider location
-router.put("/:id/location", async (req, res) => {
-  const { lat, lng } = req.body;
-
-  const order = await Order.findById(req.params.id);
-  order.riderLocation = { lat, lng };
-
-  await order.save();
-  res.json(order);
+  res.json({
+    token,
+    user: {
+      _id: user._id,
+      name: user.name,
+      phone: user.phone,
+      role: user.role,
+      subscription: user.subscription,
+      subscriptionExpiry: user.subscriptionExpiry,
+    },
+  });
 });
 
 export default router;

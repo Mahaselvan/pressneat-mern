@@ -1,7 +1,9 @@
 import axios from "axios";
 
+const API_ORIGIN = import.meta.env.VITE_API_ORIGIN || "";
+
 const instance = axios.create({
-  baseURL: "/api"
+  baseURL: API_ORIGIN ? `${API_ORIGIN}/api` : "/api"
 });
 
 instance.interceptors.request.use((config) => {

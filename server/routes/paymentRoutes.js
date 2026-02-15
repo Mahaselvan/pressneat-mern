@@ -8,12 +8,13 @@ const router = express.Router();
 
 // Create Razorpay Order
 router.post("/create-order", async (req, res) => {
-  const { amount } = req.body;
+  const { amount, orderId } = req.body;
 
   const options = {
     amount: amount * 100, // convert to paise
     currency: "INR",
     receipt: "receipt_" + Date.now(),
+    notes: orderId ? { orderId } : undefined,
   };
 
   const order = await razorpay.orders.create(options);
@@ -43,13 +44,15 @@ router.post("/verify", async (req, res) => {
       { new: true }
     );
 
-    // 🔥 Generate invoice here
-    generateInvoice(updatedOrder);
+    if (!updatedOrder) {
+      return res.status(404).json({ success: false, message: "Order not found" });
+    }
 
-    res.json({ success: true });
-  } else {
-    res.json({ success: false });
+    generateInvoice(updatedOrder);
+    return res.json({ success: true });
   }
+
+  return res.status(400).json({ success: false });
 });
 
 export default router;
