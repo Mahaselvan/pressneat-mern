@@ -7,7 +7,6 @@ import {
   Heading,
   HStack,
   Input,
-  Select,
   Text,
   VStack,
 } from "@chakra-ui/react";
@@ -196,14 +195,21 @@ const Profile = () => {
                   value={form.email}
                   onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
                 />
-                <Select
+                <Box
+                  as="select"
                   value={form.language}
                   onChange={(e) => setForm((prev) => ({ ...prev, language: e.target.value }))}
+                  border="1px solid"
+                  borderColor="gray.200"
+                  borderRadius="md"
+                  px={3}
+                  py={2}
+                  bg="white"
                 >
                   <option value="English">English</option>
                   <option value="Tamil">Tamil</option>
                   <option value="Hindi">Hindi</option>
-                </Select>
+                </Box>
                 <Input
                   placeholder="Address"
                   value={form.address}

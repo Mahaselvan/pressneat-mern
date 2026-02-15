@@ -12,7 +12,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const uploadsDir = path.resolve(__dirname, "../uploads");
 const detectScriptPath = path.resolve(__dirname, "../ai/detect.py");
-const pythonBin = process.env.PYTHON_BIN || "python3";
+const configuredPythonBin = process.env.PYTHON_BIN;
 
 if (!fsSync.existsSync(uploadsDir)) {
   fsSync.mkdirSync(uploadsDir, { recursive: true });
@@ -31,7 +31,7 @@ const upload = multer({
   },
 });
 
-const runDetection = (imagePath) =>
+const runDetectionWithBin = (pythonBin, imagePath) =>
   new Promise((resolve, reject) => {
     const child = spawn(pythonBin, [detectScriptPath, imagePath], {
       cwd: path.resolve(__dirname, ".."),
@@ -75,6 +75,25 @@ const runDetection = (imagePath) =>
       }
     });
   });
+
+const runDetection = async (imagePath) => {
+  const bins = configuredPythonBin
+    ? [configuredPythonBin]
+    : ["python", "python3"];
+
+  let lastError = null;
+  for (const bin of bins) {
+    try {
+      // Prefer python from active venv (Docker PATH), then fallback.
+      // eslint-disable-next-line no-await-in-loop
+      return await runDetectionWithBin(bin, imagePath);
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError || new Error("Unable to run detection script");
+};
 
 router.post("/", upload.single("image"), async (req, res) => {
   if (!req.file) {
