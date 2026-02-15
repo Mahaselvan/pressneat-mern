@@ -84,7 +84,10 @@ router.post("/admin/register", async (req, res) => {
 
   let canCreateAdmin = adminCount === 0;
   if (!canCreateAdmin) {
-    if (process.env.ADMIN_REGISTER_SECRET && adminSecret === process.env.ADMIN_REGISTER_SECRET) {
+    if (!process.env.ADMIN_REGISTER_SECRET) {
+      // Allow registration when no secret is configured (development-friendly default).
+      canCreateAdmin = true;
+    } else if (adminSecret === process.env.ADMIN_REGISTER_SECRET) {
       canCreateAdmin = true;
     } else if (req.headers.authorization?.startsWith("Bearer ")) {
       try {
@@ -101,7 +104,7 @@ router.post("/admin/register", async (req, res) => {
   if (!canCreateAdmin) {
     return res.status(403).json({
       message:
-        "Admin registration is restricted. Use admin token or ADMIN_REGISTER_SECRET to create admins.",
+        "Admin registration is restricted. Provide valid admin secret or use an authenticated admin account.",
     });
   }
 

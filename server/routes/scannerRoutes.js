@@ -12,7 +12,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const uploadsDir = path.resolve(__dirname, "../uploads");
 const detectScriptPath = path.resolve(__dirname, "../ai/detect.py");
-const pythonBin = process.env.PYTHON_BIN || "python";
+const pythonBin = process.env.PYTHON_BIN || "python3";
 
 if (!fsSync.existsSync(uploadsDir)) {
   fsSync.mkdirSync(uploadsDir, { recursive: true });

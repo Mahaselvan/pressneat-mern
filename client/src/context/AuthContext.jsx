@@ -15,6 +15,9 @@ export const AuthProvider = ({ children }) => {
 
   const register = useCallback(async (data) => {
     const res = await axios.post("/auth/register", data);
+    localStorage.removeItem("adminToken");
+    localStorage.removeItem("adminUser");
+    setAdmin(null);
     localStorage.setItem("token", res.data.token);
     localStorage.setItem("user", JSON.stringify(res.data.user));
     setUser(res.data.user);
@@ -23,6 +26,9 @@ export const AuthProvider = ({ children }) => {
 
   const login = useCallback(async (data) => {
     const res = await axios.post("/auth/login", data);
+    localStorage.removeItem("adminToken");
+    localStorage.removeItem("adminUser");
+    setAdmin(null);
     localStorage.setItem("token", res.data.token);
     localStorage.setItem("user", JSON.stringify(res.data.user));
     setUser(res.data.user);
@@ -37,6 +43,9 @@ export const AuthProvider = ({ children }) => {
 
   const adminLogin = useCallback(async (data) => {
     const res = await axios.post("/auth/admin/login", data);
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setUser(null);
     localStorage.setItem("adminToken", res.data.token);
     localStorage.setItem("adminUser", JSON.stringify(res.data.user));
     setAdmin(res.data.user);
@@ -45,14 +54,26 @@ export const AuthProvider = ({ children }) => {
 
   const adminRegister = useCallback(async (data) => {
     const res = await axios.post("/auth/admin/register", data);
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setUser(null);
     localStorage.setItem("adminToken", res.data.token);
     localStorage.setItem("adminUser", JSON.stringify(res.data.user));
     setAdmin(res.data.user);
     return res.data.user;
   }, []);
 
-  const refreshUser = useCallback(async () => {
-    const { data } = await axios.get("/auth/me");
+  const refreshUser = useCallback(async (roleHint = "auto") => {
+    const authMode =
+      roleHint === "admin"
+        ? "admin"
+        : roleHint === "user"
+          ? "user"
+          : localStorage.getItem("token")
+            ? "user"
+            : "admin";
+
+    const { data } = await axios.get("/auth/me", { authMode });
     if (data.role === "admin") {
       localStorage.setItem("adminUser", JSON.stringify(data));
       setAdmin(data);
@@ -63,8 +84,17 @@ export const AuthProvider = ({ children }) => {
     return data;
   }, []);
 
-  const updateProfile = useCallback(async (payload) => {
-    const { data } = await axios.put("/auth/me", payload);
+  const updateProfile = useCallback(async (payload, roleHint = "auto") => {
+    const authMode =
+      roleHint === "admin"
+        ? "admin"
+        : roleHint === "user"
+          ? "user"
+          : localStorage.getItem("token")
+            ? "user"
+            : "admin";
+
+    const { data } = await axios.put("/auth/me", payload, { authMode });
     if (data.role === "admin") {
       localStorage.setItem("adminUser", JSON.stringify(data));
       setAdmin(data);

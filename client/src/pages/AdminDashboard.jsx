@@ -36,7 +36,10 @@ const AdminDashboard = () => {
   const load = useCallback(async () => {
     try {
       setLoading(true);
-      const [analyticsRes, profile] = await Promise.all([axios.get("/admin/analytics"), refreshUser()]);
+      const [analyticsRes, profile] = await Promise.all([
+        axios.get("/admin/analytics", { authMode: "admin" }),
+        refreshUser("admin"),
+      ]);
       setAnalytics(analyticsRes.data);
       setAdminForm({
         name: profile.name || "",
@@ -65,7 +68,7 @@ const AdminDashboard = () => {
 
     try {
       setCreateLoading(true);
-      await axios.post("/admin/admins", newAdmin);
+      await axios.post("/admin/admins", newAdmin, { authMode: "admin" });
       setMessage("Admin created successfully.");
       setNewAdmin({ name: "", phone: "", password: "" });
     } catch (error) {
@@ -78,7 +81,7 @@ const AdminDashboard = () => {
   const saveAdminProfile = async () => {
     try {
       setSavingProfile(true);
-      await updateProfile(adminForm);
+      await updateProfile(adminForm, "admin");
       setMessage("Admin profile updated.");
     } catch (error) {
       setMessage(error?.response?.data?.message || "Failed to update admin profile");

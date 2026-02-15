@@ -51,7 +51,10 @@ const Profile = () => {
   useEffect(() => {
     const load = async () => {
       try {
-        const [profile, ordersRes] = await Promise.all([refreshUser(), axios.get("/orders/my")]);
+        const [profile, ordersRes] = await Promise.all([
+          refreshUser("user"),
+          axios.get("/orders/my", { authMode: "user" }),
+        ]);
         setForm({
           name: profile.name || "",
           phone: profile.phone || "",
@@ -88,13 +91,16 @@ const Profile = () => {
     try {
       setSaving(true);
       setMessage("");
-      await updateProfile({
-        name: form.name,
-        email: form.email,
-        address: form.address,
-        pincode: form.pincode,
-        language: form.language,
-      });
+      await updateProfile(
+        {
+          name: form.name,
+          email: form.email,
+          address: form.address,
+          pincode: form.pincode,
+          language: form.language,
+        },
+        "user"
+      );
       setMessage("Profile updated successfully.");
     } catch (error) {
       setMessage(error?.response?.data?.message || "Failed to update profile");

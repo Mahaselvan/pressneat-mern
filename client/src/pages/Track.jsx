@@ -32,7 +32,7 @@ const Track = () => {
   useEffect(() => {
     const fetchOrder = async () => {
       try {
-        const res = await axios.get("/orders/my");
+        const res = await axios.get("/orders/my", { authMode: "user" });
         const latestOrder = res.data[0];
         if (!latestOrder) {
           setMessage("No orders found yet.");
@@ -49,6 +49,9 @@ const Track = () => {
     };
 
     fetchOrder();
+
+    const timer = setInterval(fetchOrder, 15000);
+    return () => clearInterval(timer);
   }, []);
 
   useEffect(() => {

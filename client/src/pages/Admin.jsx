@@ -25,7 +25,7 @@ const Admin = () => {
     try {
       setLoading(true);
       const query = status === "All Orders" ? "" : `?status=${encodeURIComponent(status)}`;
-      const res = await axios.get(`/admin/orders${query}`);
+      const res = await axios.get(`/admin/orders${query}`, { authMode: "admin" });
       setOrders(res.data);
       setMessage("");
     } catch (error) {
@@ -41,7 +41,7 @@ const Admin = () => {
 
   const updateStatus = async (id, status) => {
     try {
-      const { data } = await axios.put(`/admin/orders/${id}/status`, { status });
+      const { data } = await axios.put(`/admin/orders/${id}/status`, { status }, { authMode: "admin" });
       setOrders((prev) => prev.map((o) => (o._id === id ? data : o)));
       socket.emit("statusUpdate", { orderId: id, status });
       setMessage(`Order #${id.slice(-6).toUpperCase()} updated to ${status}`);
@@ -54,7 +54,7 @@ const Admin = () => {
     try {
       const lat = 12.9675 + Math.random() * 0.01;
       const lng = 79.9419 + Math.random() * 0.01;
-      await axios.put(`/orders/${id}/location`, { lat, lng });
+      await axios.put(`/orders/${id}/location`, { lat, lng }, { authMode: "admin" });
       socket.emit("riderLocation", { orderId: id, lat, lng });
       setMessage("Rider location updated.");
     } catch (error) {
