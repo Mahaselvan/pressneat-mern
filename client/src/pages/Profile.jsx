@@ -6,7 +6,6 @@ import {
   Grid,
   Heading,
   HStack,
-  Switch,
   Text,
   VStack,
 } from "@chakra-ui/react";
@@ -128,12 +127,17 @@ const Profile = () => {
                     Get 20% off on all orders
                   </Text>
                 </Box>
-                <Switch
-                  size="lg"
-                  colorScheme="orange"
-                  isChecked={isPremium}
-                  onChange={(e) => setIsPremium(e.target.checked)}
-                />
+                <Button
+                  onClick={() => setIsPremium((prev) => !prev)}
+                  size="sm"
+                  borderRadius="full"
+                  bg={isPremium ? "orange.500" : "gray.300"}
+                  color="white"
+                  minW="58px"
+                  _hover={{ bg: isPremium ? "orange.600" : "gray.400" }}
+                >
+                  {isPremium ? "ON" : "OFF"}
+                </Button>
               </Flex>
             </ActionCard>
 

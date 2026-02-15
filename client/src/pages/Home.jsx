@@ -15,6 +15,7 @@ import {
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "../api/axios";
+import deliveryImage from "../assets/delivveryimage.jpg";
 import Navbar from "../components/Navbar";
 
 const Home = () => {
@@ -136,7 +137,7 @@ const Home = () => {
               bg="white"
             >
               <Image
-                src="https://images.unsplash.com/photo-1612858245825-8f8169430f5f?auto=format&fit=crop&w=1200&q=80"
+                src={deliveryImage}
                 alt="Pickup delivery partner on bike"
                 w="100%"
                 h={{ base: "280px", md: "430px" }}
