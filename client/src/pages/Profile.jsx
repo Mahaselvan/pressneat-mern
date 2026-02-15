@@ -2,7 +2,6 @@ import {
   Box,
   Button,
   Container,
-  Divider,
   Flex,
   Grid,
   Heading,
@@ -160,9 +159,9 @@ const Profile = () => {
             <Box bg="white" border="1px solid #d4d4d8" borderRadius="xl" p={4}>
               <VStack align="stretch" spacing={3}>
                 <Text color="#18181b">📞 {user.phone || "+91 98765 43210"}</Text>
-                <Divider />
+                <Box h="1px" bg="#e4e4e7" />
                 <Text color="#18181b">✉ {user.email || "priya@example.com"}</Text>
-                <Divider />
+                <Box h="1px" bg="#e4e4e7" />
                 <Text color="#18181b">📍 {user.address || "42, Gandhi Nagar, Sriperumbudur"}</Text>
               </VStack>
             </Box>
