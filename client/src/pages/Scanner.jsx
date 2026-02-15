@@ -24,7 +24,12 @@ const Scanner = () => {
       setResult(res.data);
       setMessage("Scan completed.");
     } catch (error) {
-      setMessage(error?.response?.data?.error || "Scanner failed. Try again.");
+      const code = error?.response?.data?.code;
+      if (code === "OPENAI_KEY_MISSING") {
+        setMessage("Scanner is not enabled on server. Set OPENAI_API_KEY in backend environment.");
+      } else {
+        setMessage(error?.response?.data?.error || "Scanner failed. Try again.");
+      }
     } finally {
       setLoading(false);
     }

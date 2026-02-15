@@ -49,7 +49,10 @@ router.post("/", upload.single("image"), async (req, res) => {
 
   if (!process.env.OPENAI_API_KEY) {
     await fs.unlink(req.file.path).catch(() => {});
-    return res.status(500).json({ error: "OPENAI_API_KEY is not configured" });
+    return res.status(503).json({
+      error: "AI scanner unavailable: OPENAI_API_KEY is not configured on server",
+      code: "OPENAI_KEY_MISSING",
+    });
   }
 
   try {
@@ -101,7 +104,10 @@ router.post("/", upload.single("image"), async (req, res) => {
     });
   } catch (error) {
     console.error("AI scanner error:", error);
-    return res.status(500).json({ error: "AI scan failed" });
+    return res.status(500).json({
+      error: "AI scan failed",
+      code: "AI_SCAN_FAILED",
+    });
   } finally {
     await fs.unlink(req.file.path).catch(() => {});
   }
