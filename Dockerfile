@@ -1,6 +1,5 @@
 FROM node:20-bookworm
 
-ENV NODE_ENV=production
 WORKDIR /app
 
 # Python runtime for local YOLO inference
@@ -18,17 +17,20 @@ RUN npm ci --prefix server
 
 # Install client dependencies and build frontend
 COPY client/package*.json ./client/
-RUN npm ci --prefix client
+RUN npm ci --prefix client --include=dev
 
 # Install Python dependencies
 COPY server/requirements.txt ./server/requirements.txt
-RUN pip install --no-cache-dir -r ./server/requirements.txt
+RUN pip install --no-cache-dir --extra-index-url https://download.pytorch.org/whl/cpu -r ./server/requirements.txt
 
 # Copy source
 COPY . .
 
 # Build client assets used by server in production mode
 RUN npm run build --prefix client
+
+# Runtime env
+ENV NODE_ENV=production
 
 # Render sets PORT dynamically; server already reads process.env.PORT
 EXPOSE 10000
