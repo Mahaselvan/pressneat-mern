@@ -25,6 +25,7 @@ RUN pip install --no-cache-dir --extra-index-url https://download.pytorch.org/wh
 
 # Copy source
 COPY . .
+RUN mkdir -p ./server/uploads
 
 # Build client assets used by server in production mode
 RUN npm run build --prefix client

@@ -18,8 +18,23 @@ if (!fsSync.existsSync(uploadsDir)) {
   fsSync.mkdirSync(uploadsDir, { recursive: true });
 }
 
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadsDir);
+  },
+  filename: (req, file, cb) => {
+    const extFromName = path.extname(file.originalname || "").toLowerCase();
+    const extFromMime = file.mimetype?.startsWith("image/")
+      ? `.${file.mimetype.split("/")[1].split("+")[0]}`
+      : "";
+    const ext = extFromName || extFromMime || ".jpg";
+    const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`;
+    cb(null, uniqueName);
+  },
+});
+
 const upload = multer({
-  dest: uploadsDir,
+  storage,
   limits: {
     fileSize: 8 * 1024 * 1024,
   },
