@@ -1,25 +1,40 @@
 import { Box, Heading, Text } from "@chakra-ui/react";
+import Navbar from "../components/Navbar";
 import { useAuth } from "../context/AuthContext";
 
 const Profile = () => {
   const { user } = useAuth();
 
   return (
-    <Box maxW="600px" mx="auto" mt={10} p={6} shadow="md" borderRadius="lg">
-      <Heading size="lg" mb={4}>
-        Profile
-      </Heading>
-      {user ? (
-        <>
-          <Text><b>Name:</b> {user.name}</Text>
-          <Text><b>Phone:</b> {user.phone}</Text>
-          <Text><b>Role:</b> {user.role}</Text>
-          <Text><b>Plan:</b> {user.subscription || "Free"}</Text>
-        </>
-      ) : (
-        <Text>Please login to view your profile.</Text>
-      )}
-    </Box>
+    <>
+      <Navbar />
+      <Box px={5} py={8}>
+        <Box
+          maxW="600px"
+          mx="auto"
+          p={7}
+          bg="white"
+          border="1px solid"
+          borderColor="orange.100"
+          borderRadius="2xl"
+          boxShadow="sm"
+        >
+          <Heading size="lg" mb={5} color="orange.500">
+            Profile
+          </Heading>
+          {user ? (
+            <>
+              <Text mb={2}><b>Name:</b> {user.name}</Text>
+              <Text mb={2}><b>Phone:</b> {user.phone}</Text>
+              <Text mb={2}><b>Role:</b> {user.role}</Text>
+              <Text><b>Plan:</b> {user.subscription || "Free"}</Text>
+            </>
+          ) : (
+            <Text>Please login to view your details.</Text>
+          )}
+        </Box>
+      </Box>
+    </>
   );
 };
 
