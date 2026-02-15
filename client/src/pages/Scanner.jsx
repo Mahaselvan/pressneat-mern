@@ -27,6 +27,10 @@ const Scanner = () => {
       const code = error?.response?.data?.code;
       if (code === "OPENAI_KEY_MISSING") {
         setMessage("Scanner is not enabled on server. Set OPENAI_API_KEY in backend environment.");
+      } else if (code === "AI_QUOTA_EXCEEDED") {
+        setMessage("AI quota exceeded. Recharge your OpenAI account and try scanning again.");
+      } else if (code === "OPENAI_KEY_INVALID") {
+        setMessage("OpenAI API key is invalid. Update backend OPENAI_API_KEY.");
       } else {
         setMessage(error?.response?.data?.error || "Scanner failed. Try again.");
       }

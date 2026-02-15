@@ -104,6 +104,24 @@ router.post("/", upload.single("image"), async (req, res) => {
     });
   } catch (error) {
     console.error("AI scanner error:", error);
+    const errorCode = error?.code || error?.error?.code;
+    const errorType = error?.type || error?.error?.type;
+    const status = Number(error?.status) || 500;
+
+    if (status === 429 || errorCode === "insufficient_quota" || errorType === "insufficient_quota") {
+      return res.status(429).json({
+        error: "AI quota exceeded. Please recharge or upgrade your OpenAI billing plan.",
+        code: "AI_QUOTA_EXCEEDED",
+      });
+    }
+
+    if (status === 401 || errorCode === "invalid_api_key") {
+      return res.status(401).json({
+        error: "Invalid OpenAI API key configuration.",
+        code: "OPENAI_KEY_INVALID",
+      });
+    }
+
     return res.status(500).json({
       error: "AI scan failed",
       code: "AI_SCAN_FAILED",
