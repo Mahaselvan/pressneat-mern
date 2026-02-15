@@ -17,13 +17,14 @@ const Scanner = () => {
 
     try {
       setLoading(true);
+      setMessage("");
       const formData = new FormData();
       formData.append("image", file);
       const res = await axios.post("/scanner", formData);
       setResult(res.data);
       setMessage("Scan completed.");
     } catch (error) {
-      setMessage("Scanner failed. Try again.");
+      setMessage(error?.response?.data?.error || "Scanner failed. Try again.");
     } finally {
       setLoading(false);
     }
@@ -58,6 +59,18 @@ const Scanner = () => {
               <Text>Count: {result.count}</Text>
               <Text>Estimated Price: ₹{result.price}</Text>
               <Text>Eco Score: {result.eco_score}</Text>
+              {Array.isArray(result.items) && result.items.length > 0 ? (
+                <Box mt={3}>
+                  <Text fontWeight="700" mb={1}>
+                    Item Breakdown
+                  </Text>
+                  {result.items.map((item, index) => (
+                    <Text key={`${item.type}-${index}`} fontSize="sm">
+                      {item.type}: {item.count} x ₹{item.price_per_piece}
+                    </Text>
+                  ))}
+                </Box>
+              ) : null}
             </Box>
           ) : null}
         </Box>
