@@ -9,7 +9,7 @@ import {
 import { useEffect, useState } from "react";
 import axios from "../api/axios";
 import { io } from "socket.io-client";
-const socket = io("http://localhost:5000");
+const socket = io();
 const sendLiveLocation = (orderId) => {
   const lat = 12.9675 + Math.random() * 0.01;
   const lng = 79.9419 + Math.random() * 0.01;
