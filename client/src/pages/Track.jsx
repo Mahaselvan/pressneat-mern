@@ -1,4 +1,4 @@
-import { Box, Button, Heading, Progress, Text, VStack } from "@chakra-ui/react";
+import { Box, Button, Heading, Text, VStack } from "@chakra-ui/react";
 import { GoogleMap, Marker, useLoadScript } from "@react-google-maps/api";
 import { useEffect, useState } from "react";
 import { io } from "socket.io-client";
@@ -82,7 +82,14 @@ const Track = () => {
           <Box p={4} borderRadius="xl" bg="white" border="1px solid" borderColor="orange.100">
             <Text fontWeight="700">Order: {order._id}</Text>
             <Text>Status: {order.status}</Text>
-            <Progress value={progress} colorScheme="orange" mt={3} />
+            <Box mt={3} h="10px" bg="orange.100" borderRadius="full" overflow="hidden">
+              <Box
+                h="100%"
+                bg="orange.500"
+                width={`${Math.max(0, Math.min(100, progress))}%`}
+                transition="width 0.3s ease"
+              />
+            </Box>
 
             {order.paymentStatus === "Paid" ? (
               <Button

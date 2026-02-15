@@ -1,4 +1,4 @@
-import { Box, Button, Heading, HStack, Select, Text, VStack } from "@chakra-ui/react";
+import { Box, Button, Heading, HStack, Text, VStack } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { io } from "socket.io-client";
 import axios from "../api/axios";
@@ -65,15 +65,21 @@ const Admin = () => {
                 {order.phone} • {order.address}
               </Text>
               <HStack mt={3} gap={2} flexWrap="wrap">
-                <Select
-                  maxW="240px"
+                <select
+                  style={{
+                    maxWidth: "240px",
+                    padding: "8px 10px",
+                    borderRadius: "8px",
+                    border: "1px solid #fdba74",
+                    background: "white",
+                  }}
                   value={order.status}
                   onChange={(e) => updateStatus(order._id, e.target.value)}
                 >
                   {statuses.map((status) => (
                     <option key={status}>{status}</option>
                   ))}
-                </Select>
+                </select>
                 <Button size="sm" colorScheme="orange" onClick={() => moveRider(order._id)}>
                   Move Rider
                 </Button>

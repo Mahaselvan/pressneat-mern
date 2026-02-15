@@ -1,4 +1,4 @@
-import { Badge, Box, Button, Checkbox, Heading, Input, Text, VStack } from "@chakra-ui/react";
+import { Badge, Box, Button, Heading, Input, Text, VStack } from "@chakra-ui/react";
 import { useMemo, useState } from "react";
 import axios from "../api/axios";
 import Navbar from "../components/Navbar";
@@ -115,9 +115,15 @@ const Book = () => {
               value={items}
               onChange={(e) => setItems(e.target.value)}
             />
-            <Checkbox colorScheme="orange" isChecked={ecoSteam} onChange={() => setEcoSteam((v) => !v)}>
-              Eco Steam (+₹2 per piece)
-            </Checkbox>
+            <Box w="100%" display="flex" alignItems="center" gap={2}>
+              <input
+                id="eco-steam"
+                type="checkbox"
+                checked={ecoSteam}
+                onChange={() => setEcoSteam((v) => !v)}
+              />
+              <label htmlFor="eco-steam">Eco Steam (+₹2 per piece)</label>
+            </Box>
 
             <Box w="100%" p={3} bg="orange.50" borderRadius="md" border="1px solid" borderColor="orange.100">
               <Text fontSize="sm">Items: {parsedItems.length}</Text>
