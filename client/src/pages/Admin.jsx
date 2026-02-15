@@ -37,7 +37,11 @@ const Admin = () => {
 
   useEffect(() => {
     loadOrders("All Orders");
-  }, [loadOrders]);
+    const timer = setInterval(() => {
+      loadOrders(filter);
+    }, 15000);
+    return () => clearInterval(timer);
+  }, [filter, loadOrders]);
 
   const updateStatus = async (id, status) => {
     try {

@@ -15,7 +15,14 @@ const AdminLogin = () => {
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async () => {
-    if (!phone || !password || (mode === "register" && !name)) {
+    const payload = {
+      name: name.trim(),
+      phone: phone.trim(),
+      password,
+      adminSecret: adminSecret.trim(),
+    };
+
+    if (!payload.phone || !payload.password || (mode === "register" && !payload.name)) {
       setMessage("Please fill all required fields.");
       return;
     }
@@ -25,9 +32,9 @@ const AdminLogin = () => {
       setMessage("");
 
       if (mode === "register") {
-        await adminRegister({ name, phone, password, adminSecret });
+        await adminRegister(payload);
       } else {
-        await adminLogin({ phone, password });
+        await adminLogin({ phone: payload.phone, password: payload.password });
       }
 
       navigate("/admin");

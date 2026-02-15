@@ -17,10 +17,11 @@ const Scanner = () => {
 
     try {
       setLoading(true);
-      setMessage("");
+      setMessage("Scanning image. This can take up to 30-60 seconds...");
+      setResult(null);
       const formData = new FormData();
       formData.append("image", file);
-      const res = await axios.post("/scanner", formData);
+      const res = await axios.post("/scanner", formData, { timeout: 180000 });
       setResult(res.data);
       setMessage("Scan completed.");
     } catch (error) {

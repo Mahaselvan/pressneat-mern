@@ -3,14 +3,23 @@ import axios from "../api/axios";
 
 const AuthContext = createContext();
 
+const safeParse = (value) => {
+  if (!value) return null;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     const storedUser = localStorage.getItem("user");
-    return storedUser ? JSON.parse(storedUser) : null;
+    return safeParse(storedUser);
   });
   const [admin, setAdmin] = useState(() => {
     const storedAdmin = localStorage.getItem("adminUser");
-    return storedAdmin ? JSON.parse(storedAdmin) : null;
+    return safeParse(storedAdmin);
   });
 
   const register = useCallback(async (data) => {
