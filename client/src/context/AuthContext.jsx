@@ -8,6 +8,10 @@ export const AuthProvider = ({ children }) => {
     const storedUser = localStorage.getItem("user");
     return storedUser ? JSON.parse(storedUser) : null;
   });
+  const [admin, setAdmin] = useState(() => {
+    const storedAdmin = localStorage.getItem("adminUser");
+    return storedAdmin ? JSON.parse(storedAdmin) : null;
+  });
 
   const register = async (data) => {
     const res = await axios.post("/auth/register", data);
@@ -27,8 +31,23 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  const adminLogin = async (data) => {
+    const res = await axios.post("/auth/admin/login", data);
+    localStorage.setItem("adminToken", res.data.token);
+    localStorage.setItem("adminUser", JSON.stringify(res.data.user));
+    setAdmin(res.data.user);
+  };
+
+  const adminLogout = () => {
+    localStorage.removeItem("adminToken");
+    localStorage.removeItem("adminUser");
+    setAdmin(null);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, register, login, logout }}>
+    <AuthContext.Provider
+      value={{ user, register, login, logout, admin, adminLogin, adminLogout }}
+    >
       {children}
     </AuthContext.Provider>
   );

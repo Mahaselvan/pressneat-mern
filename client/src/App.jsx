@@ -4,10 +4,12 @@ import Book from "./pages/Book";
 import Track from "./pages/Track";
 import Admin from "./pages/Admin";
 import AdminDashboard from "./pages/AdminDashboard";
+import AdminLogin from "./pages/AdminLogin";
 import Login from "./pages/Login";
 import Scanner from "./pages/Scanner";
 import Profile from "./pages/Profile";
 import ProtectedRoute from "./pages/ProtectedRoute";
+import AdminProtectedRoute from "./pages/AdminProtectedRoute";
 import { useAuth } from "./context/AuthContext";
 
 function App() {
@@ -18,6 +20,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home user={user} />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/admin/login" element={<AdminLogin />} />
         <Route
           path="/book"
           element={
@@ -37,17 +40,17 @@ function App() {
         <Route
           path="/admin"
           element={
-            <ProtectedRoute>
-              <Admin />
-            </ProtectedRoute>
+            <AdminProtectedRoute>
+              <AdminDashboard />
+            </AdminProtectedRoute>
           }
         />
         <Route
-          path="/admin-dashboard"
+          path="/admin/orders"
           element={
-            <ProtectedRoute>
-              <AdminDashboard />
-            </ProtectedRoute>
+            <AdminProtectedRoute>
+              <Admin />
+            </AdminProtectedRoute>
           }
         />
         <Route

@@ -21,9 +21,17 @@ router.post("/", async (req, res) => {
     ? items.map((item) => item.trim()).filter(Boolean)
     : [];
   const pieceCount = normalizedItems.length;
-  const baseRate = 12;
-  const ecoExtra = ecoSteam ? 2 : 0;
-  const totalPrice = pieceCount * (baseRate + ecoExtra);
+  const priceMap = {
+    shirt: 15,
+    pant: 20,
+    saree: 50,
+    uniform: 15,
+  };
+  const totalPrice = normalizedItems.reduce((sum, item) => {
+    const key = item.toLowerCase();
+    const base = priceMap[key] ?? 12;
+    return sum + base + (ecoSteam ? 2 : 0);
+  }, 0);
 
   const order = await Order.create({
     customerName,

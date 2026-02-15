@@ -58,4 +58,47 @@ router.post("/login", async (req, res) => {
   });
 });
 
+router.post("/admin/login", async (req, res) => {
+  const { phone, password } = req.body;
+  let admin = await User.findOne({ phone, role: "admin" });
+
+  if (!admin && process.env.ADMIN_PHONE && process.env.ADMIN_PASSWORD) {
+    const canBootstrap =
+      phone === process.env.ADMIN_PHONE && password === process.env.ADMIN_PASSWORD;
+
+    if (canBootstrap) {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      admin = await User.create({
+        name: "Admin",
+        phone,
+        password: hashedPassword,
+        role: "admin",
+      });
+    }
+  }
+
+  if (!admin) {
+    return res.status(400).json({ message: "Admin user not found" });
+  }
+
+  const isMatch = await bcrypt.compare(password, admin.password);
+  if (!isMatch) {
+    return res.status(400).json({ message: "Invalid credentials" });
+  }
+
+  const token = jwt.sign({ id: admin._id }, process.env.JWT_SECRET, {
+    expiresIn: "30d",
+  });
+
+  res.json({
+    token,
+    user: {
+      _id: admin._id,
+      name: admin.name,
+      phone: admin.phone,
+      role: admin.role,
+    },
+  });
+});
+
 export default router;

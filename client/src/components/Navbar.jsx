@@ -7,7 +7,6 @@ const navItems = [
   { to: "/book", label: "Book" },
   { to: "/track", label: "Track" },
   { to: "/scanner", label: "Scanner" },
-  { to: "/admin-dashboard", label: "Analytics" },
 ];
 
 const Navbar = () => {
@@ -69,9 +68,14 @@ const Navbar = () => {
           </Button>
         </HStack>
       ) : (
-        <Button colorScheme="orange" size="sm" onClick={() => navigate("/login")}>
-          Login
-        </Button>
+        <HStack>
+          <Button variant="outline" size="sm" onClick={() => navigate("/admin/login")}>
+            Admin
+          </Button>
+          <Button colorScheme="orange" size="sm" onClick={() => navigate("/login")}>
+            Login
+          </Button>
+        </HStack>
       )}
     </Flex>
   );
