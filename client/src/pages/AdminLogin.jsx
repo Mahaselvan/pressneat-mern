@@ -5,20 +5,34 @@ import { useAuth } from "../context/AuthContext";
 
 const AdminLogin = () => {
   const navigate = useNavigate();
-  const { adminLogin } = useAuth();
+  const { adminLogin, adminRegister } = useAuth();
+  const [mode, setMode] = useState("login");
+  const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [adminSecret, setAdminSecret] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = async () => {
+  const handleSubmit = async () => {
+    if (!phone || !password || (mode === "register" && !name)) {
+      setMessage("Please fill all required fields.");
+      return;
+    }
+
     try {
       setLoading(true);
       setMessage("");
-      await adminLogin({ phone, password });
+
+      if (mode === "register") {
+        await adminRegister({ name, phone, password, adminSecret });
+      } else {
+        await adminLogin({ phone, password });
+      }
+
       navigate("/admin");
     } catch (error) {
-      setMessage(error?.response?.data?.message || "Admin login failed");
+      setMessage(error?.response?.data?.message || "Admin authentication failed");
     } finally {
       setLoading(false);
     }
@@ -37,9 +51,12 @@ const AdminLogin = () => {
         p={7}
       >
         <Heading size="lg" mb={5} color="blue.700">
-          Admin Login
+          {mode === "register" ? "Admin Registration" : "Admin Login"}
         </Heading>
         <VStack spacing={4}>
+          {mode === "register" ? (
+            <Input placeholder="Admin Name" value={name} onChange={(e) => setName(e.target.value)} />
+          ) : null}
           <Input placeholder="Admin Phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
           <Input
             type="password"
@@ -47,8 +64,25 @@ const AdminLogin = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-          <Button colorScheme="blue" w="100%" onClick={handleLogin} isLoading={loading}>
-            Login to Admin
+          {mode === "register" ? (
+            <Input
+              placeholder="Admin Secret (if required)"
+              value={adminSecret}
+              onChange={(e) => setAdminSecret(e.target.value)}
+            />
+          ) : null}
+          <Button colorScheme="blue" w="100%" onClick={handleSubmit} isLoading={loading}>
+            {mode === "register" ? "Register Admin" : "Login to Admin"}
+          </Button>
+          <Button
+            variant="ghost"
+            w="100%"
+            onClick={() => {
+              setMode((prev) => (prev === "login" ? "register" : "login"));
+              setMessage("");
+            }}
+          >
+            {mode === "register" ? "Already admin? Login" : "Need admin account? Register"}
           </Button>
           {message ? <Text fontSize="sm">{message}</Text> : null}
         </VStack>

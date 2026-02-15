@@ -15,7 +15,10 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (data) => {
     const res = await axios.post("/auth/register", data);
-    return res.data;
+    localStorage.setItem("token", res.data.token);
+    localStorage.setItem("user", JSON.stringify(res.data.user));
+    setUser(res.data.user);
+    return res.data.user;
   };
 
   const login = async (data) => {
@@ -23,6 +26,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem("token", res.data.token);
     localStorage.setItem("user", JSON.stringify(res.data.user));
     setUser(res.data.user);
+    return res.data.user;
   };
 
   const logout = () => {
@@ -36,6 +40,39 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem("adminToken", res.data.token);
     localStorage.setItem("adminUser", JSON.stringify(res.data.user));
     setAdmin(res.data.user);
+    return res.data.user;
+  };
+
+  const adminRegister = async (data) => {
+    const res = await axios.post("/auth/admin/register", data);
+    localStorage.setItem("adminToken", res.data.token);
+    localStorage.setItem("adminUser", JSON.stringify(res.data.user));
+    setAdmin(res.data.user);
+    return res.data.user;
+  };
+
+  const refreshUser = async () => {
+    const { data } = await axios.get("/auth/me");
+    if (data.role === "admin") {
+      localStorage.setItem("adminUser", JSON.stringify(data));
+      setAdmin(data);
+    } else {
+      localStorage.setItem("user", JSON.stringify(data));
+      setUser(data);
+    }
+    return data;
+  };
+
+  const updateProfile = async (payload) => {
+    const { data } = await axios.put("/auth/me", payload);
+    if (data.role === "admin") {
+      localStorage.setItem("adminUser", JSON.stringify(data));
+      setAdmin(data);
+    } else {
+      localStorage.setItem("user", JSON.stringify(data));
+      setUser(data);
+    }
+    return data;
   };
 
   const adminLogout = () => {
@@ -46,7 +83,18 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider
-      value={{ user, register, login, logout, admin, adminLogin, adminLogout }}
+      value={{
+        user,
+        register,
+        login,
+        logout,
+        admin,
+        adminLogin,
+        adminRegister,
+        adminLogout,
+        refreshUser,
+        updateProfile,
+      }}
     >
       {children}
     </AuthContext.Provider>

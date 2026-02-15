@@ -32,8 +32,8 @@ const Track = () => {
   useEffect(() => {
     const fetchOrder = async () => {
       try {
-        const res = await axios.get("/orders");
-        const latestOrder = res.data[res.data.length - 1];
+        const res = await axios.get("/orders/my");
+        const latestOrder = res.data[0];
         if (!latestOrder) {
           setMessage("No orders found yet.");
           return;
@@ -43,7 +43,7 @@ const Track = () => {
         setLocation(latestOrder.riderLocation);
         setMessage("");
         socket.emit("joinOrder", latestOrder._id);
-      } catch (error) {
+      } catch {
         setMessage("Unable to load tracking.");
       }
     };

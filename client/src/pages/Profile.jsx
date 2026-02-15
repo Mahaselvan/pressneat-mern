@@ -6,27 +6,102 @@ import {
   Grid,
   Heading,
   HStack,
+  Input,
+  Select,
   Text,
   VStack,
 } from "@chakra-ui/react";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "../api/axios";
 import Navbar from "../components/Navbar";
 import { useAuth } from "../context/AuthContext";
 
 const Profile = () => {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
-  const [isPremium, setIsPremium] = useState((user?.subscription || "").toLowerCase() === "premium");
+  const { user, logout, refreshUser, updateProfile } = useAuth();
+  const [form, setForm] = useState({
+    name: "",
+    phone: "",
+    email: "",
+    address: "",
+    pincode: "",
+    language: "English",
+  });
+  const [stats, setStats] = useState({
+    totalOrders: 0,
+    totalSpent: 0,
+    waterSaved: "0L",
+    energySaved: "0.0 kWh",
+  });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
 
-  const initials = !user?.name
-    ? "PN"
-    : user.name
-        .split(" ")
-        .map((part) => part[0])
-        .join("")
-        .slice(0, 2)
-        .toUpperCase();
+  const initials = useMemo(() => {
+    if (!form.name) return "PN";
+    return form.name
+      .split(" ")
+      .map((part) => part[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase();
+  }, [form.name]);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const [profile, ordersRes] = await Promise.all([refreshUser(), axios.get("/orders/my")]);
+        setForm({
+          name: profile.name || "",
+          phone: profile.phone || "",
+          email: profile.email || "",
+          address: profile.address || "",
+          pincode: profile.pincode || "",
+          language: profile.language || "English",
+        });
+
+        const orders = ordersRes.data || [];
+        const paidOrders = orders.filter((order) => order.paymentStatus === "Paid");
+        const totalSpent = paidOrders.reduce((sum, order) => sum + (order.totalPrice || 0), 0);
+        const totalItems = orders.reduce((sum, order) => sum + (order.pieceCount || 0), 0);
+        const waterSavedLitres = totalItems * 2;
+        const energySavedKwh = (totalItems * 0.08).toFixed(1);
+
+        setStats({
+          totalOrders: orders.length,
+          totalSpent,
+          waterSaved: `${waterSavedLitres}L`,
+          energySaved: `${energySavedKwh} kWh`,
+        });
+      } catch (error) {
+        setMessage(error?.response?.data?.message || "Unable to load profile");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, [refreshUser]);
+
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      setMessage("");
+      await updateProfile({
+        name: form.name,
+        email: form.email,
+        address: form.address,
+        pincode: form.pincode,
+        language: form.language,
+      });
+      setMessage("Profile updated successfully.");
+    } catch (error) {
+      setMessage(error?.response?.data?.message || "Failed to update profile");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   if (!user) {
     return (
@@ -71,13 +146,10 @@ const Profile = () => {
                 </Flex>
                 <Box>
                   <Heading size="md" color="#18181b">
-                    {user.name || "PressNeat User"}
+                    {form.name || "PressNeat User"}
                   </Heading>
                   <Text color="gray.500" fontSize="sm">
-                    <span role="img" aria-label="location">
-                      📍
-                    </span>{" "}
-                    {user.address || "Sriperumbudur, 602105"}
+                    📍 {form.pincode ? `${form.address} - ${form.pincode}` : "Set your address and pincode"}
                   </Text>
                   <Box
                     display="inline-flex"
@@ -90,84 +162,61 @@ const Profile = () => {
                     fontSize="xs"
                     fontWeight="700"
                   >
-                    Premium
+                    {user.subscription || "Free"}
                   </Box>
                 </Box>
               </HStack>
             </Box>
 
             <Grid templateColumns={{ base: "1fr", md: "repeat(3, 1fr)" }} gap={3}>
-              <StatCard
-                icon="📦"
-                value={String(user.totalOrders ?? 3)}
-                label="Total Orders"
-                valueColor="#18181b"
-              />
-              <StatCard
-                icon="₹"
-                value={String(user.totalSpent ?? 240)}
-                label="Total Spent"
-                valueColor="#18181b"
-              />
-              <StatCard
-                icon="♻"
-                value={String(user.waterSaved ?? "35L")}
-                label="Water Saved"
-                valueColor="#16a34a"
-              />
+              <StatCard icon="📦" value={String(stats.totalOrders)} label="Total Orders" valueColor="#18181b" />
+              <StatCard icon="₹" value={String(stats.totalSpent)} label="Total Spent" valueColor="#18181b" />
+              <StatCard icon="♻" value={stats.waterSaved} label="Water Saved" valueColor="#16a34a" />
             </Grid>
 
-            <ActionCard>
-              <Flex align="center" justify="space-between">
-                <Box>
-                  <Text fontWeight="700" color="#18181b">
-                    Premium Subscription
-                  </Text>
-                  <Text fontSize="sm" color="gray.500">
-                    Get 20% off on all orders
-                  </Text>
-                </Box>
-                <Button
-                  onClick={() => setIsPremium((prev) => !prev)}
-                  size="sm"
-                  borderRadius="full"
-                  bg={isPremium ? "orange.500" : "gray.300"}
-                  color="white"
-                  minW="58px"
-                  _hover={{ bg: isPremium ? "orange.600" : "gray.400" }}
-                >
-                  {isPremium ? "ON" : "OFF"}
-                </Button>
-              </Flex>
-            </ActionCard>
-
-            <ActionCard>
-              <Flex align="center" justify="space-between">
-                <Box>
-                  <Text fontWeight="700" color="#18181b">
-                    Language
-                  </Text>
-                  <Text fontSize="sm" color="gray.500">
-                    English
-                  </Text>
-                </Box>
-                <Button variant="outline" size="sm">
-                  தமிழ்
-                </Button>
-              </Flex>
-            </ActionCard>
-
-            <Text fontWeight="700" color="#18181b">
-              Contact Info
-            </Text>
             <Box bg="white" border="1px solid #d4d4d8" borderRadius="xl" p={4}>
-              <VStack align="stretch" spacing={3}>
-                <Text color="#18181b">📞 {user.phone || "+91 98765 43210"}</Text>
-                <Box h="1px" bg="#e4e4e7" />
-                <Text color="#18181b">✉ {user.email || "priya@example.com"}</Text>
-                <Box h="1px" bg="#e4e4e7" />
-                <Text color="#18181b">📍 {user.address || "42, Gandhi Nagar, Sriperumbudur"}</Text>
-              </VStack>
+              <Text fontWeight="700" mb={3}>
+                Profile Details
+              </Text>
+              <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }} gap={3}>
+                <Input
+                  placeholder="Full name"
+                  value={form.name}
+                  onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
+                />
+                <Input value={form.phone} isReadOnly placeholder="Phone" />
+                <Input
+                  placeholder="Email"
+                  value={form.email}
+                  onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
+                />
+                <Select
+                  value={form.language}
+                  onChange={(e) => setForm((prev) => ({ ...prev, language: e.target.value }))}
+                >
+                  <option value="English">English</option>
+                  <option value="Tamil">Tamil</option>
+                  <option value="Hindi">Hindi</option>
+                </Select>
+                <Input
+                  placeholder="Address"
+                  value={form.address}
+                  onChange={(e) => setForm((prev) => ({ ...prev, address: e.target.value }))}
+                />
+                <Input
+                  placeholder="Pincode"
+                  value={form.pincode}
+                  onChange={(e) => setForm((prev) => ({ ...prev, pincode: e.target.value }))}
+                />
+              </Grid>
+              <HStack mt={4}>
+                <Button colorScheme="orange" onClick={handleSave} isLoading={saving} isDisabled={loading}>
+                  Save Profile
+                </Button>
+                <Button variant="outline" onClick={() => navigate("/track")}>
+                  Track Orders
+                </Button>
+              </HStack>
             </Box>
 
             <Box bg="#effcf3" border="1px solid #a7f3d0" borderRadius="xl" p={5}>
@@ -177,32 +226,39 @@ const Profile = () => {
               <Grid templateColumns={{ base: "1fr", md: "1fr 1fr" }} gap={4}>
                 <Box textAlign="center">
                   <Text fontSize="3xl" fontWeight="800" color="#16a34a">
-                    35L
+                    {stats.waterSaved}
                   </Text>
                   <Text color="gray.600">Water Saved</Text>
                 </Box>
                 <Box textAlign="center">
                   <Text fontSize="3xl" fontWeight="800" color="#f97316">
-                    1.4 kWh
+                    {stats.energySaved}
                   </Text>
                   <Text color="gray.600">Energy Saved</Text>
                 </Box>
               </Grid>
             </Box>
 
-            <ActionRow
-              label={user.role === "admin" ? "Admin Panel" : "Track Orders"}
-              onClick={() => navigate(user.role === "admin" ? "/admin" : "/track")}
-            />
-            <ActionRow label="Settings" onClick={() => navigate("/profile")} />
-            <ActionRow
-              label="Sign Out"
+            <Button
+              justifyContent="space-between"
+              variant="outline"
+              borderColor="#d4d4d8"
+              bg="white"
               color="#ef4444"
+              fontWeight="700"
               onClick={() => {
                 logout();
                 navigate("/login");
               }}
-            />
+            >
+              Sign Out
+            </Button>
+
+            {message ? (
+              <Text fontSize="sm" color="gray.700">
+                {message}
+              </Text>
+            ) : null}
           </VStack>
         </Container>
       </Box>
@@ -220,27 +276,6 @@ const StatCard = ({ icon, value, label, valueColor }) => (
       {label}
     </Text>
   </Box>
-);
-
-const ActionCard = ({ children }) => (
-  <Box bg="white" border="1px solid #d4d4d8" borderRadius="xl" p={4}>
-    {children}
-  </Box>
-);
-
-const ActionRow = ({ label, onClick, color = "#18181b" }) => (
-  <Button
-    justifyContent="space-between"
-    rightIcon={<Text color="gray.400">›</Text>}
-    variant="outline"
-    borderColor="#d4d4d8"
-    bg="white"
-    color={color}
-    fontWeight={label === "Sign Out" ? "700" : "500"}
-    onClick={onClick}
-  >
-    {label}
-  </Button>
 );
 
 export default Profile;

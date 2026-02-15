@@ -25,8 +25,7 @@ const Login = () => {
       setMessage("");
       if (isRegisterMode) {
         await register({ name, phone, password });
-        setMessage("Registration successful. Please login.");
-        setIsRegisterMode(false);
+        navigate("/");
       } else {
         await login({ phone, password });
         navigate("/");

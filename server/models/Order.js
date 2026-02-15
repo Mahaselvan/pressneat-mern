@@ -9,6 +9,7 @@ const orderSchema = mongoose.Schema(
     customerName: String,
     phone: String,
     address: String,
+    pincode: String,
 
     items: [
       {
@@ -21,6 +22,10 @@ const orderSchema = mongoose.Schema(
     ecoSteam: Boolean,
 
     totalPrice: Number,
+    deliveryCharge: {
+      type: Number,
+      default: 0,
+    },
 
     status: {
       type: String,

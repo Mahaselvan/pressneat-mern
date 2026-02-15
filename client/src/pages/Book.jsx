@@ -1,7 +1,9 @@
-import { Box, Button, Heading, HStack, Input, Text, VStack } from "@chakra-ui/react";
-import { useMemo, useState } from "react";
+import { Box, Button, Heading, HStack, Input, SimpleGrid, Text, VStack } from "@chakra-ui/react";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 import axios from "../api/axios";
 import Navbar from "../components/Navbar";
+import { useAuth } from "../context/AuthContext";
 
 const catalog = [
   { key: "shirts", label: "Shirts", price: 15 },
@@ -11,9 +13,12 @@ const catalog = [
 ];
 
 const Book = () => {
+  const location = useLocation();
+  const { user, refreshUser } = useAuth();
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [pincode, setPincode] = useState("");
   const [counts, setCounts] = useState({
     shirts: 0,
     pants: 0,
@@ -23,27 +28,66 @@ const Book = () => {
   const [orderId, setOrderId] = useState("");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [deliveryCharge, setDeliveryCharge] = useState(0);
+  const [serviceAvailable, setServiceAvailable] = useState(false);
 
-  const { totalItems, totalAmount, itemsList } = useMemo(() => {
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const profile = await refreshUser();
+        setName(profile.name || "");
+        setPhone(profile.phone || "");
+        setAddress(profile.address || "");
+        const params = new URLSearchParams(location.search);
+        const fromQuery = params.get("pincode");
+        setPincode(fromQuery || profile.pincode || "");
+      } catch {
+        // silently keep fields empty
+      }
+    };
+    load();
+  }, [location.search, refreshUser]);
+
+  useEffect(() => {
+    const check = async () => {
+      if (!/^\d{6}$/.test(pincode)) {
+        setServiceAvailable(false);
+        setDeliveryCharge(0);
+        return;
+      }
+      try {
+        const { data } = await axios.get(`/service/${pincode}`);
+        setServiceAvailable(Boolean(data.available));
+        setDeliveryCharge(data.available ? data.deliveryCharge || 0 : 0);
+      } catch {
+        setServiceAvailable(false);
+        setDeliveryCharge(0);
+      }
+    };
+    check();
+  }, [pincode]);
+
+  const { totalItems, itemsTotal, totalAmount, itemsList } = useMemo(() => {
     let totalItemsCalc = 0;
-    let totalAmountCalc = 0;
+    let itemsAmount = 0;
     const itemNames = [];
 
     catalog.forEach((item) => {
       const qty = counts[item.key] || 0;
       totalItemsCalc += qty;
-      totalAmountCalc += qty * item.price;
-      for (let i = 0; i < qty; i++) {
+      itemsAmount += qty * item.price;
+      for (let i = 0; i < qty; i += 1) {
         itemNames.push(item.label.slice(0, -1));
       }
     });
 
     return {
       totalItems: totalItemsCalc,
-      totalAmount: totalAmountCalc,
+      itemsTotal: itemsAmount,
+      totalAmount: itemsAmount + deliveryCharge,
       itemsList: itemNames,
     };
-  }, [counts]);
+  }, [counts, deliveryCharge]);
 
   const adjustCount = (key, delta) => {
     setCounts((prev) => ({
@@ -53,39 +97,40 @@ const Book = () => {
   };
 
   const createOrder = async () => {
-    if (!name || !phone || !address || totalItems === 0) {
+    if (!name || !phone || !address || !pincode || totalItems === 0) {
       setMessage("Please fill details and select at least one cloth item.");
-      return;
+      return null;
+    }
+    if (!serviceAvailable) {
+      setMessage("This pincode is not serviceable yet.");
+      return null;
     }
 
-    try {
-      setLoading(true);
-      const res = await axios.post("/orders", {
-        customerName: name,
-        phone,
-        address,
-        items: itemsList,
-        ecoSteam: false,
-      });
-      setOrderId(res.data._id);
-      setMessage("Order created. Continue with payment.");
-    } catch (error) {
-      setMessage("Could not create order.");
-    } finally {
-      setLoading(false);
-    }
+    const res = await axios.post("/orders", {
+      customerName: name,
+      phone,
+      address,
+      pincode,
+      items: itemsList,
+      ecoSteam: false,
+    });
+    setOrderId(res.data._id);
+    return res.data._id;
   };
 
   const confirmAndPay = async () => {
-    if (!orderId) {
-      await createOrder();
-      return;
-    }
-
     try {
+      setLoading(true);
+      setMessage("");
+
+      const currentOrderId = orderId || (await createOrder());
+      if (!currentOrderId) {
+        return;
+      }
+
       const { data } = await axios.post("/payment/create-order", {
         amount: totalAmount,
-        orderId,
+        orderId: currentOrderId,
       });
 
       const options = {
@@ -98,9 +143,9 @@ const Book = () => {
         handler: async function (response) {
           await axios.post("/payment/verify", {
             ...response,
-            orderId,
+            orderId: currentOrderId,
           });
-          setMessage("Payment successful.");
+          setMessage("Payment successful. Your order is now confirmed.");
         },
         prefill: { name, contact: phone },
         theme: { color: "#F59E0B" },
@@ -109,14 +154,16 @@ const Book = () => {
       const rzp = new window.Razorpay(options);
       rzp.open();
     } catch (error) {
-      setMessage("Payment start failed.");
+      setMessage(error?.response?.data?.message || "Payment start failed.");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <>
       <Navbar />
-      <Box px={5} py={8} maxW="1150px" mx="auto">
+      <Box px={{ base: 4, md: 6 }} py={8} maxW="1150px" mx="auto">
         <Heading mb={2}>Book Ironing Service</Heading>
         <Text color="gray.600" mb={6}>
           Schedule a pickup and get your clothes ironed professionally
@@ -126,11 +173,26 @@ const Book = () => {
           <Heading size="md" mb={4}>
             Pickup Details
           </Heading>
-          <VStack align="stretch" spacing={3}>
+          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3}>
             <Input placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
-            <Input placeholder="Phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
-            <Input placeholder="Pickup Address" value={address} onChange={(e) => setAddress(e.target.value)} />
-          </VStack>
+            <Input
+              placeholder="Phone"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              isReadOnly={Boolean(user?.phone)}
+            />
+            <Input
+              placeholder="Pickup Address"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+            />
+            <Input placeholder="Pincode" value={pincode} onChange={(e) => setPincode(e.target.value)} />
+          </SimpleGrid>
+          <Text mt={3} color={serviceAvailable ? "green.600" : "red.600"} fontSize="sm">
+            {serviceAvailable
+              ? `Service available. Delivery charge: ₹${deliveryCharge}`
+              : "Enter a valid serviceable pincode to continue."}
+          </Text>
         </Box>
 
         <Box p={6} bg="white" borderRadius="2xl" border="1px solid #e5e7eb" mb={6}>
@@ -139,13 +201,7 @@ const Book = () => {
           </Heading>
           <VStack align="stretch" spacing={3}>
             {catalog.map((item) => (
-              <HStack
-                key={item.key}
-                justify="space-between"
-                p={4}
-                borderRadius="xl"
-                border="1px solid #e5e7eb"
-              >
+              <HStack key={item.key} justify="space-between" p={4} borderRadius="xl" border="1px solid #e5e7eb">
                 <Box>
                   <Text fontWeight="700">{item.label}</Text>
                   <Text color="gray.600">₹{item.price} per piece</Text>
@@ -171,8 +227,8 @@ const Book = () => {
             Price Summary
           </Heading>
           <Text>Total Items: {totalItems} pieces</Text>
-          <Text>Pickup Charges: Free</Text>
-          <Text>Delivery Charges: Free</Text>
+          <Text>Items Total: ₹{itemsTotal}</Text>
+          <Text>Delivery Charges: ₹{deliveryCharge}</Text>
           <Text mt={3} fontSize="3xl" fontWeight="800" color="#1e3a8a">
             ₹{totalAmount}
           </Text>
@@ -183,9 +239,9 @@ const Book = () => {
             colorScheme="orange"
             onClick={confirmAndPay}
             isLoading={loading}
-            isDisabled={totalItems === 0}
+            isDisabled={totalItems === 0 || !serviceAvailable}
           >
-            Confirm & Pay
+            Confirm and Pay
           </Button>
           {message ? <Text mt={3}>{message}</Text> : null}
         </Box>

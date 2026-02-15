@@ -59,7 +59,7 @@ const Home = () => {
                 clothes to perfection, and deliver them back fresh and crisp.
               </Text>
 
-              <HStack spacing={3} flexWrap="wrap">
+                <HStack spacing={3} flexWrap="wrap">
                 <Button
                   bg="#2b4aa2"
                   color="white"
@@ -84,15 +84,22 @@ const Home = () => {
                 <Text fontSize="sm" fontWeight="600" mb={2} color="gray.700">
                   Check serviceability
                 </Text>
-                <HStack spacing={2} align="start">
+                <HStack spacing={2} align="start" flexWrap="wrap">
                   <Input
                     placeholder="Enter pincode"
                     value={pincode}
                     onChange={(e) => setPincode(e.target.value)}
                     bg="white"
+                    maxW={{ base: "100%", md: "270px" }}
                   />
                   <Button colorScheme="orange" onClick={checkPincode} isLoading={checking}>
                     Check
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => navigate(`/book${pincode ? `?pincode=${pincode}` : ""}`)}
+                  >
+                    Go to Booking
                   </Button>
                 </HStack>
                 {message ? (
@@ -102,7 +109,7 @@ const Home = () => {
                 ) : null}
               </Box>
 
-              <SimpleGrid columns={3} spacing={6} pt={2}>
+              <SimpleGrid columns={{ base: 1, sm: 3 }} spacing={6} pt={2}>
                 <Box>
                   <Text fontWeight="800" fontSize="2xl" color="#0b1f45">
                     10K+

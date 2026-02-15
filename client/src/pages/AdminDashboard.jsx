@@ -6,6 +6,7 @@ import {
   Grid,
   HStack,
   Heading,
+  Input,
   Spinner,
   Text,
   VStack,
@@ -21,6 +22,8 @@ const AdminDashboard = () => {
   const [analytics, setAnalytics] = useState(null);
   const [message, setMessage] = useState("Loading admin dashboard...");
   const [loading, setLoading] = useState(true);
+  const [newAdmin, setNewAdmin] = useState({ name: "", phone: "", password: "" });
+  const [createLoading, setCreateLoading] = useState(false);
 
   const load = async () => {
     try {
@@ -38,6 +41,24 @@ const AdminDashboard = () => {
   useEffect(() => {
     load();
   }, []);
+
+  const createAdmin = async () => {
+    if (!newAdmin.name || !newAdmin.phone || !newAdmin.password) {
+      setMessage("Enter name, phone and password to create an admin");
+      return;
+    }
+
+    try {
+      setCreateLoading(true);
+      await axios.post("/admin/admins", newAdmin);
+      setMessage("Admin created successfully.");
+      setNewAdmin({ name: "", phone: "", password: "" });
+    } catch (error) {
+      setMessage(error?.response?.data?.message || "Failed to create admin");
+    } finally {
+      setCreateLoading(false);
+    }
+  };
 
   const initials = useMemo(() => {
     if (!admin?.name) return "AD";
@@ -143,6 +164,73 @@ const AdminDashboard = () => {
                 <Text color="gray.600">Orders Today</Text>
               </Box>
             </Grid>
+          </Box>
+
+          <Box bg="white" border="1px solid #d4d4d8" borderRadius="xl" p={4}>
+            <Text fontWeight="700" mb={3}>
+              Order Status Breakdown
+            </Text>
+            <VStack align="stretch" spacing={2}>
+              {(analytics?.statusBreakdown || []).map((entry) => (
+                <HStack key={entry._id} justify="space-between">
+                  <Text color="gray.700">{entry._id}</Text>
+                  <Text fontWeight="700">{entry.count}</Text>
+                </HStack>
+              ))}
+            </VStack>
+          </Box>
+
+          <Box bg="white" border="1px solid #d4d4d8" borderRadius="xl" p={4}>
+            <Text fontWeight="700" mb={3}>
+              Recent Orders
+            </Text>
+            <VStack align="stretch" spacing={2}>
+              {(analytics?.recentOrders || []).map((order) => (
+                <HStack key={order._id} justify="space-between" align="start" borderBottom="1px solid #f1f5f9" pb={2}>
+                  <Box>
+                    <Text fontWeight="600">{order.customerName}</Text>
+                    <Text fontSize="xs" color="gray.500">
+                      {order.pincode} • {order.pieceCount} items
+                    </Text>
+                  </Box>
+                  <Box textAlign="right">
+                    <Text fontSize="sm" fontWeight="700">
+                      ₹{order.totalPrice}
+                    </Text>
+                    <Text fontSize="xs" color="gray.500">
+                      {order.status}
+                    </Text>
+                  </Box>
+                </HStack>
+              ))}
+            </VStack>
+          </Box>
+
+          <Box bg="white" border="1px solid #d4d4d8" borderRadius="xl" p={4}>
+            <Text fontWeight="700" mb={3}>
+              Create New Admin
+            </Text>
+            <VStack spacing={3} align="stretch">
+              <Input
+                placeholder="Name"
+                value={newAdmin.name}
+                onChange={(e) => setNewAdmin((prev) => ({ ...prev, name: e.target.value }))}
+              />
+              <Input
+                placeholder="Phone"
+                value={newAdmin.phone}
+                onChange={(e) => setNewAdmin((prev) => ({ ...prev, phone: e.target.value }))}
+              />
+              <Input
+                type="password"
+                placeholder="Password"
+                value={newAdmin.password}
+                onChange={(e) => setNewAdmin((prev) => ({ ...prev, password: e.target.value }))}
+              />
+              <Button colorScheme="blue" onClick={createAdmin} isLoading={createLoading}>
+                Create Admin
+              </Button>
+            </VStack>
           </Box>
 
           <ActionRow label="Manage Orders" onClick={() => navigate("/admin/orders")} />
