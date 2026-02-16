@@ -19,7 +19,10 @@ router.post("/create-order", async (req, res) => {
 
   const order = await razorpay.orders.create(options);
 
-  res.json(order);
+  res.json({
+    ...order,
+    key: process.env.RAZORPAY_KEY_ID,
+  });
 });
 
 // Verify Payment

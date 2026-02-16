@@ -134,7 +134,7 @@ const Book = () => {
       });
 
       const options = {
-        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        key: data.key,
         amount: data.amount,
         currency: "INR",
         order_id: data.id,
