@@ -10,7 +10,7 @@ const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const uploadsDir = path.resolve(__dirname, "../uploads");
-const hfModel = process.env.HF_MODEL || "Salesforce/blip-image-captioning-base";
+const hfModel = process.env.HF_MODEL || "facebook/detr-resnet-50";
 const configuredHfApiUrl = (process.env.HF_API_URL || "").trim();
 const hfApiUrl = configuredHfApiUrl
   ? configuredHfApiUrl.replace(
@@ -70,6 +70,17 @@ const pickCaption = (payload) => {
     if (typeof first === "string") return first;
     if (first && typeof first.generated_text === "string") return first.generated_text;
     if (first && typeof first.summary_text === "string") return first.summary_text;
+    if (first && typeof first.label === "string") {
+      const labels = payload
+        .filter((item) => item && typeof item.label === "string")
+        .sort((a, b) => (Number(b?.score) || 0) - (Number(a?.score) || 0))
+        .slice(0, 6)
+        .map((item) => item.label.toLowerCase().trim());
+      const deduped = [...new Set(labels)];
+      if (deduped.length > 0) {
+        return `detected ${deduped.join(", ")}`;
+      }
+    }
   }
 
   if (payload && typeof payload.generated_text === "string") return payload.generated_text;

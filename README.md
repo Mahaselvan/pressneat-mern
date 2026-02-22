@@ -15,7 +15,7 @@ This project supports a single-container deployment with:
 2. Select your repo.
 3. Set **Environment** to `Docker`.
 4. Add required environment variables used by `server/server.js` (`MONGO_URI`, `JWT_SECRET`, `CORS_ORIGIN`, etc.).
-5. Add scanner variables: `HF_API_TOKEN`, `HF_MODEL` (optional), `HF_API_URL` (optional).
+5. Add scanner variables: `HF_API_TOKEN`, `HF_MODEL` (optional, recommended: `facebook/detr-resnet-50`), `HF_API_URL` (optional).
 6. Deploy.
 
 The container starts with:
