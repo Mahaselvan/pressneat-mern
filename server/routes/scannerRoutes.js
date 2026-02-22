@@ -11,7 +11,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const uploadsDir = path.resolve(__dirname, "../uploads");
 const hfModel = process.env.HF_MODEL || "Salesforce/blip-image-captioning-base";
-const hfApiUrl = process.env.HF_API_URL || `https://api-inference.huggingface.co/models/${hfModel}`;
+const configuredHfApiUrl = (process.env.HF_API_URL || "").trim();
+const hfApiUrl = configuredHfApiUrl
+  ? configuredHfApiUrl.replace(
+      "https://api-inference.huggingface.co/models/",
+      "https://router.huggingface.co/hf-inference/models/"
+    )
+  : `https://router.huggingface.co/hf-inference/models/${hfModel}`;
 
 if (!fsSync.existsSync(uploadsDir)) {
   fsSync.mkdirSync(uploadsDir, { recursive: true });
