@@ -4,15 +4,14 @@ import { promises as fs } from "fs";
 import fsSync from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { spawn } from "child_process";
 
 const router = express.Router();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const uploadsDir = path.resolve(__dirname, "../uploads");
-const detectScriptPath = path.resolve(__dirname, "../ai/detect.py");
-const configuredPythonBin = process.env.PYTHON_BIN;
+const hfModel = process.env.HF_MODEL || "Salesforce/blip-image-captioning-base";
+const hfApiUrl = process.env.HF_API_URL || `https://api-inference.huggingface.co/models/${hfModel}`;
 
 if (!fsSync.existsSync(uploadsDir)) {
   fsSync.mkdirSync(uploadsDir, { recursive: true });
@@ -46,68 +45,81 @@ const upload = multer({
   },
 });
 
-const runDetectionWithBin = (pythonBin, imagePath) =>
-  new Promise((resolve, reject) => {
-    const child = spawn(pythonBin, [detectScriptPath, imagePath], {
-      cwd: path.resolve(__dirname, ".."),
-    });
+const numberWords = {
+  one: 1,
+  two: 2,
+  three: 3,
+  four: 4,
+  five: 5,
+  six: 6,
+  seven: 7,
+  eight: 8,
+  nine: 9,
+  ten: 10,
+};
 
-    let stdout = "";
-    let stderr = "";
-
-    child.stdout.on("data", (chunk) => {
-      stdout += chunk.toString();
-    });
-
-    child.stderr.on("data", (chunk) => {
-      stderr += chunk.toString();
-    });
-
-    child.on("error", (error) => {
-      reject(error);
-    });
-
-    child.on("close", (code) => {
-      if (code !== 0) {
-        return reject(new Error(stderr || `Detection script exited with code ${code}`));
-      }
-
-      // Ultralytics can print extra lines; parse the last JSON-looking line.
-      const lines = stdout
-        .split(/\r?\n/)
-        .map((line) => line.trim())
-        .filter(Boolean);
-      const jsonLine = [...lines].reverse().find((line) => line.startsWith("{") && line.endsWith("}"));
-      if (!jsonLine) {
-        return reject(new Error("Detection output did not contain valid JSON"));
-      }
-
-      try {
-        const parsed = JSON.parse(jsonLine);
-        return resolve(parsed);
-      } catch {
-        return reject(new Error("Failed to parse detection JSON output"));
-      }
-    });
-  });
-
-const runDetection = async (imagePath) => {
-  const bins = configuredPythonBin
-    ? [configuredPythonBin]
-    : ["python3", "python"];
-
-  let lastError = null;
-  for (const bin of bins) {
-    try {
-      // Prefer python from active venv (Docker PATH), then fallback.
-      // eslint-disable-next-line no-await-in-loop
-      return await runDetectionWithBin(bin, imagePath);
-    } catch (error) {
-      lastError = error;
-    }
+const pickCaption = (payload) => {
+  if (Array.isArray(payload) && payload.length > 0) {
+    const first = payload[0];
+    if (typeof first === "string") return first;
+    if (first && typeof first.generated_text === "string") return first.generated_text;
+    if (first && typeof first.summary_text === "string") return first.summary_text;
   }
 
-  throw lastError || new Error("Unable to run detection script");
+  if (payload && typeof payload.generated_text === "string") return payload.generated_text;
+  if (payload && typeof payload.summary_text === "string") return payload.summary_text;
+  if (typeof payload === "string") return payload;
+
+  return "";
+};
+
+const pickFabricType = (caption) => {
+  const text = caption.toLowerCase();
+  if (text.includes("cotton")) return "Cotton";
+  if (text.includes("denim")) return "Denim";
+  if (text.includes("silk")) return "Silk";
+  if (text.includes("wool")) return "Wool";
+  if (text.includes("linen")) return "Linen";
+  if (text.includes("polyester")) return "Polyester";
+  return "Mixed fabric";
+};
+
+const pickPieceTypeAndPrice = (caption) => {
+  const text = caption.toLowerCase();
+  const catalog = [
+    { regex: /\b(t-?shirt|shirt|blouse|top)\b/, type: "Shirt/Top", unitPrice: 80 },
+    { regex: /\b(jeans|trousers?|pants?)\b/, type: "Pants", unitPrice: 100 },
+    { regex: /\b(saree|sari)\b/, type: "Saree", unitPrice: 150 },
+    { regex: /\b(kurta|kurti)\b/, type: "Kurta", unitPrice: 120 },
+    { regex: /\b(dress|gown)\b/, type: "Dress", unitPrice: 140 },
+    { regex: /\b(jacket|coat)\b/, type: "Jacket/Coat", unitPrice: 180 },
+    { regex: /\b(hoodie|sweater)\b/, type: "Hoodie/Sweater", unitPrice: 160 },
+    { regex: /\b(shorts?|skirt)\b/, type: "Shorts/Skirt", unitPrice: 90 },
+  ];
+
+  const match = catalog.find((item) => item.regex.test(text));
+  if (match) return match;
+
+  return { type: "Mixed garments", unitPrice: 100 };
+};
+
+const pickPieceCount = (caption) => {
+  const text = caption.toLowerCase();
+  const numericMatch = text.match(/\b([1-9]|10)\b/);
+  if (numericMatch) return Number(numericMatch[1]);
+
+  for (const [word, value] of Object.entries(numberWords)) {
+    if (text.includes(word)) return value;
+  }
+
+  return 1;
+};
+
+const pickEcoScore = (fabricType) => {
+  if (["Cotton", "Linen"].includes(fabricType)) return "A";
+  if (["Silk", "Wool", "Denim"].includes(fabricType)) return "B";
+  if (fabricType === "Polyester") return "C";
+  return "B";
 };
 
 router.post("/", upload.single("image"), async (req, res) => {
@@ -115,46 +127,77 @@ router.post("/", upload.single("image"), async (req, res) => {
     return res.status(400).json({ error: "Image is required", code: "IMAGE_MISSING" });
   }
 
-  if (!fsSync.existsSync(detectScriptPath)) {
-    await fs.unlink(req.file.path).catch(() => {});
-    return res.status(500).json({
-      error: "AI scanner script not found at server/ai/detect.py",
-      code: "DETECT_SCRIPT_MISSING",
-    });
-  }
-
   try {
-    const result = await runDetection(req.file.path);
+    const hfApiToken = process.env.HF_API_TOKEN;
+    if (!hfApiToken) {
+      return res.status(500).json({
+        error: "HF_API_TOKEN is missing in server environment",
+        code: "HF_CONFIG_MISSING",
+      });
+    }
+
+    const imageBuffer = await fs.readFile(req.file.path);
+    const response = await fetch(hfApiUrl, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${hfApiToken}`,
+        "Content-Type": req.file.mimetype || "application/octet-stream",
+      },
+      body: imageBuffer,
+    });
+
+    let payload = null;
+    const contentType = response.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      payload = await response.json();
+    } else {
+      payload = await response.text();
+    }
+
+    if (!response.ok) {
+      const messageFromProvider =
+        (payload && typeof payload === "object" && payload.error) ||
+        (typeof payload === "string" ? payload : "");
+
+      if (
+        response.status === 503 ||
+        String(messageFromProvider).toLowerCase().includes("loading")
+      ) {
+        return res.status(503).json({
+          error: "Hugging Face model is loading. Please retry in a few seconds.",
+          code: "HF_MODEL_LOADING",
+        });
+      }
+
+      return res.status(502).json({
+        error: "Hugging Face API request failed",
+        code: "HF_API_FAILED",
+        details: String(messageFromProvider || "Unknown provider error"),
+      });
+    }
+
+    const caption = pickCaption(payload);
+    const normalizedCaption = caption.trim() || "garments in image";
+    const pieceMeta = pickPieceTypeAndPrice(normalizedCaption);
+    const pieceCount = Math.max(1, Math.min(10, pickPieceCount(normalizedCaption)));
+    const fabricType = pickFabricType(normalizedCaption);
+    const ecoScore = pickEcoScore(fabricType);
+    const estimatedPrice = pieceMeta.unitPrice * pieceCount;
 
     return res.json({
-      fabric: result.fabric || "Detected garments",
-      count: Number.isFinite(result.count) ? result.count : 0,
-      price: Number.isFinite(result.price) ? result.price : Number(result.estimated_price) || 0,
-      eco_score: result.eco_score || "N/A",
-      items: Array.isArray(result.items) ? result.items : [],
-      raw_items: Array.isArray(result.raw_items) ? result.raw_items : [],
+      fabric: fabricType,
+      count: pieceCount,
+      price: estimatedPrice,
+      eco_score: ecoScore,
+      items: [{ type: pieceMeta.type, count: pieceCount, price_per_piece: pieceMeta.unitPrice }],
+      raw_caption: normalizedCaption,
     });
   } catch (error) {
-    console.error("Local AI scanner error:", error);
-
-    const message = String(error?.message || "");
-    if (message.includes("No module named") || message.includes("ultralytics")) {
-      return res.status(503).json({
-        error: "Python dependency missing. Install with: pip install ultralytics",
-        code: "PYTHON_DEPENDENCY_MISSING",
-      });
-    }
-
-    if (message.includes("not recognized") || message.includes("ENOENT")) {
-      return res.status(503).json({
-        error: "Python not found. Install Python or set PYTHON_BIN env var.",
-        code: "PYTHON_NOT_FOUND",
-      });
-    }
+    console.error("Hugging Face scanner error:", error);
 
     return res.status(500).json({
-      error: "Local AI scan failed",
-      code: "LOCAL_AI_SCAN_FAILED",
+      error: "Scanner failed while processing with Hugging Face API",
+      code: "HF_SCAN_FAILED",
     });
   } finally {
     await fs.unlink(req.file.path).catch(() => {});

@@ -26,14 +26,14 @@ const Scanner = () => {
       setMessage("Scan completed.");
     } catch (error) {
       const code = error?.response?.data?.code;
-      if (code === "PYTHON_NOT_FOUND") {
-        setMessage("Python not found on server. Install Python or set PYTHON_BIN.");
-      } else if (code === "PYTHON_DEPENDENCY_MISSING") {
-        setMessage("Install AI dependency on server: pip install ultralytics");
-      } else if (code === "DETECT_SCRIPT_MISSING") {
-        setMessage("AI script missing at server/ai/detect.py");
-      } else if (code === "LOCAL_AI_SCAN_FAILED") {
-        setMessage("Local AI scan failed. Check server logs for Python/YOLO errors.");
+      if (code === "HF_CONFIG_MISSING") {
+        setMessage("Hugging Face API token is missing on server. Set HF_API_TOKEN in server/.env.");
+      } else if (code === "HF_MODEL_LOADING") {
+        setMessage("Hugging Face model is loading. Retry in a few seconds.");
+      } else if (code === "HF_API_FAILED") {
+        setMessage("Hugging Face API request failed. Check server logs and token/model configuration.");
+      } else if (code === "HF_SCAN_FAILED") {
+        setMessage("Scanner failed while using Hugging Face API. Check server logs.");
       } else {
         setMessage(error?.response?.data?.error || "Scanner failed. Try again.");
       }

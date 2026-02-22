@@ -3,19 +3,20 @@
 This project supports a single-container deployment with:
 - Node.js backend
 - React frontend build
-- Python + YOLO (ultralytics) for local AI scanning
+- Hugging Face Inference API for AI scanning
 
 ### Files added
 - `Dockerfile`
 - `.dockerignore`
-- `server/requirements.txt`
+- `server/.env.example`
 
 ### Render setup
 1. Create a new Web Service on Render.
 2. Select your repo.
 3. Set **Environment** to `Docker`.
 4. Add required environment variables used by `server/server.js` (`MONGO_URI`, `JWT_SECRET`, `CORS_ORIGIN`, etc.).
-5. Deploy.
+5. Add scanner variables: `HF_API_TOKEN`, `HF_MODEL` (optional), `HF_API_URL` (optional).
+6. Deploy.
 
 The container starts with:
 - `node server/server.js`
