@@ -158,21 +158,31 @@ router.post("/", upload.single("image"), async (req, res) => {
       const messageFromProvider =
         (payload && typeof payload === "object" && payload.error) ||
         (typeof payload === "string" ? payload : "");
+      const providerErrorDetails = String(messageFromProvider || "Unknown provider error");
+
+      console.error("Hugging Face API non-OK response", {
+        hfApiUrl,
+        model: hfModel,
+        status: response.status,
+        details: providerErrorDetails,
+      });
 
       if (
         response.status === 503 ||
-        String(messageFromProvider).toLowerCase().includes("loading")
+        providerErrorDetails.toLowerCase().includes("loading")
       ) {
         return res.status(503).json({
           error: "Hugging Face model is loading. Please retry in a few seconds.",
           code: "HF_MODEL_LOADING",
+          details: providerErrorDetails,
         });
       }
 
       return res.status(502).json({
         error: "Hugging Face API request failed",
         code: "HF_API_FAILED",
-        details: String(messageFromProvider || "Unknown provider error"),
+        provider_status: response.status,
+        details: providerErrorDetails,
       });
     }
 

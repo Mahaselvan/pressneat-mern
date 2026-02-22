@@ -26,12 +26,15 @@ const Scanner = () => {
       setMessage("Scan completed.");
     } catch (error) {
       const code = error?.response?.data?.code;
+      const details = error?.response?.data?.details;
+      const providerStatus = error?.response?.data?.provider_status;
       if (code === "HF_CONFIG_MISSING") {
         setMessage("Hugging Face API token is missing on server. Set HF_API_TOKEN in server/.env.");
       } else if (code === "HF_MODEL_LOADING") {
-        setMessage("Hugging Face model is loading. Retry in a few seconds.");
+        setMessage(`Hugging Face model is loading. Retry in a few seconds. ${details || ""}`.trim());
       } else if (code === "HF_API_FAILED") {
-        setMessage("Hugging Face API request failed. Check server logs and token/model configuration.");
+        const statusText = providerStatus ? ` (HF status ${providerStatus})` : "";
+        setMessage(`Hugging Face API request failed${statusText}: ${details || "Check token/model configuration."}`);
       } else if (code === "HF_SCAN_FAILED") {
         setMessage("Scanner failed while using Hugging Face API. Check server logs.");
       } else {
