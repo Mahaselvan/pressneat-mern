@@ -6,6 +6,22 @@ PressNeat is a full-stack laundry/ironing service platform with:
 - order tracking with real-time rider updates
 - AI fabric scanner powered by Hugging Face Inference API
 
+## pages in User Side
+
+### 1.Home
+<img width="1896" height="1068" alt="image" src="https://github.com/user-attachments/assets/3f026d89-d983-46eb-b15f-7cdc3f41c70d" />
+### 2.Booking 
+<img width="1919" height="1070" alt="image" src="https://github.com/user-attachments/assets/720d781f-eda7-4444-b718-e288b44cd797" />
+### 3.Order Tracking
+<img width="1918" height="968" alt="image" src="https://github.com/user-attachments/assets/f97b0472-a2ae-444e-82d1-ef72bd99b5db" />
+### 4.Scanner
+<img width="1904" height="1068" alt="image" src="https://github.com/user-attachments/assets/00f349bc-70e1-45f0-9dfb-947383b7d4f0" />
+
+## pages in Admin Side
+
+ <img width="1104" height="1061" alt="image" src="https://github.com/user-attachments/assets/dc81dc3d-b538-414a-abf0-ee7cd32a3748" />
+
+
 ## 1. Core Features
 
 ### User side
